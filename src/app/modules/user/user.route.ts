@@ -33,7 +33,7 @@ router.get(
 /* ================= CREATE USER ================= */
 
 router.post(
-  "/",
+  "/register",
   fileUpload.upload.single("file"),
   (req: Request, res: Response, next: NextFunction) => {
     try {

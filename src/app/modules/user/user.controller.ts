@@ -34,7 +34,6 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
 const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
   const decodedUser = req.user as any;
-
   const user = await UserService.getSingleUser(decodedUser.userId);
 
   sendResponse(res, {
