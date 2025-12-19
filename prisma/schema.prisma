@@ -7,6 +7,8 @@ datasource db {
 
 }
 
+/* ---------------- ENUMS ---------------- */
+
 enum Role {
   USER
   ADMIN
@@ -25,88 +27,107 @@ enum SubscriptionPlan {
   YEARLY
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+/* ---------------- MODELS ---------------- */
+
 model User {
-  id                String            @id @default(uuid())
-  email             String            @unique
-  password          String
-  fullName          String
-  role              Role              @default(USER)
-  profileImage      String?
-  bio               String?
-  travelInterests   String[]
-  visitedCountries  String[]
-  currentLocation   String?
-  isVerified        Boolean           @default(false)
-  subscriptionPlan  SubscriptionPlan  @default(FREE)
+  id                 String            @id @default(uuid())
+  email              String            @unique
+  name               String
+  fullName           String?
+  password           String
+
+  role               Role              @default(USER)
+  authProvider       AuthProvider      @default(LOCAL)
+  googleId           String?            @unique
+
+  profilePicture     String?
+  profileImage       String?
+  bio                String?
+  currentLocation    String?
+
+  travelInterests    String[]           @default([])
+  visitedCountries   String[]           @default([])
+
+  isVerified         Boolean            @default(false)
+  subscriptionPlan   SubscriptionPlan   @default(FREE)
   subscriptionEndsAt DateTime?
-  
-  travelPlans       TravelPlan[]
-  reviews           Review[]          @relation("ReviewsGiven")
-  receivedReviews   Review[]          @relation("ReviewsReceived")
-  payments          Payment[]
-  
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  
+
+  travelPlans        TravelPlan[]
+  reviews            Review[]           @relation("ReviewsGiven")
+  receivedReviews    Review[]           @relation("ReviewsReceived")
+  payments           Payment[]
+
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
   @@index([email])
 }
 
 model TravelPlan {
   id              String      @id @default(uuid())
+
   userId          String
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   destination     String
   country         String
   city            String?
   startDate       DateTime
   endDate         DateTime
+
   budgetMin       Float?
   budgetMax       Float?
   travelType      TravelType
+
   description     String?
   itinerary       String?
-  
+
   isActive        Boolean     @default(true)
-  
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  
+
   @@index([userId])
   @@index([destination, startDate])
 }
 
 model Review {
   id          String   @id @default(uuid())
-  
+
   reviewerId  String
   reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-  
+
   reviewedId  String
   reviewed    User     @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
-  
-  rating      Int      // 1-5
+
+  rating      Int
   comment     String
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   @@index([reviewedId])
   @@unique([reviewerId, reviewedId])
 }
 
 model Payment {
   id              String   @id @default(uuid())
+
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   amount          Float
   currency        String   @default("USD")
   status          String   // pending, completed, failed
   transactionId   String   @unique
   plan            SubscriptionPlan
-  
+
   createdAt       DateTime @default(now())
-  
+
   @@index([userId])
 }

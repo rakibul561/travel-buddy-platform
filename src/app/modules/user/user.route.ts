@@ -3,8 +3,7 @@ import { UserController } from "./user.controller";
 import { fileUpload } from "../../utils/fileUpload";
 import { userValidation } from "./user.validation";
 import passport from "../../config/passport.config";
-import auth from "../../middlewares/auth";
-import { UserRole } from "@prisma/client";
+
 
 const router = express.Router();
 
@@ -17,21 +16,19 @@ router.post("/",
     }
 );
 
-router.patch("/profile", auth(UserRole.USER, UserRole.ADMIN), fileUpload.upload.single("file"), UserController.userUpdateProfile);
+// router.patch("/profile", auth(UserRole.USER, UserRole.ADMIN), fileUpload.upload.single("file"), UserController.userUpdateProfile);
 
-// Get current user (protected)
-router.get("/me", auth(UserRole.USER, UserRole.ADMIN), UserController.getSingleUser);
+// // Get current user (protected)
+// router.get("/me", auth(UserRole.USER, UserRole.ADMIN), UserController.getSingleUser);
 
-// FIND USER BY ID (protected)
-router.get("/:id", auth( UserRole.ADMIN), UserController.getFindUserById);
+// // FIND USER BY ID (protected)
+// router.get("/:id", auth( UserRole.ADMIN), UserController.getFindUserById);
 
-// GET ALL USERS (protected)
-router.get("/", auth(UserRole.ADMIN), UserController.getAllUsers);
+// // GET ALL USERS (protected)
+// router.get("/", auth(UserRole.ADMIN), UserController.getAllUsers);
 
-// DELETE USER BY ID (protected)
-router.delete("/:id", auth(UserRole.ADMIN), UserController.deleteUser);
-
-
+// // DELETE USER BY ID (protected)
+// router.delete("/:id", auth(UserRole.ADMIN), UserController.deleteUser);
 
 // New Google OAuth routes
 router.get(
@@ -50,7 +47,6 @@ router.get( "/auth/google/callback",
         res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`);
     }
 );
-
 
 
 export const UserRoutes = router;
