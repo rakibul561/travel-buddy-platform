@@ -7,16 +7,14 @@ import { getIO } from "../../utils/socket";
 import ApiError from "../../errors/apiError";
 import { PrismaQueryBuilder } from "../../utils/QueryBuilder";
 
-/* --------------------------------------------------
-   Helper: generate random password (for Google users)
---------------------------------------------------- */
+/* ================= HELPER ================= */
+
 const generateRandomPassword = async () => {
   return bcrypt.hash(Math.random().toString(36).slice(-10), 10);
 };
 
-/* --------------------------------------------------
-   Create User (LOCAL signup)
---------------------------------------------------- */
+/* ================= CREATE USER ================= */
+
 const createUser = async (req: Request) => {
   const { name, fullName, email, password, role } = req.body;
 
@@ -52,10 +50,8 @@ const createUser = async (req: Request) => {
       visitedCountries: [],
       isVerified: false,
     },
-   
   });
 
-  // 🔔 realtime notify
   getIO().emit("user-registered", {
     message: "New user registered",
     data: user,
@@ -64,9 +60,8 @@ const createUser = async (req: Request) => {
   return user;
 };
 
-/* --------------------------------------------------
-   Google Login: Find or Create User
---------------------------------------------------- */
+/* ================= GOOGLE LOGIN ================= */
+
 const findOrCreateGoogleUser = async (profile: {
   id: string;
   email: string;
@@ -77,7 +72,6 @@ const findOrCreateGoogleUser = async (profile: {
     where: { email: profile.email },
   });
 
-  // User exists
   if (user) {
     if (!user.googleId) {
       user = await prisma.user.update({
@@ -93,7 +87,6 @@ const findOrCreateGoogleUser = async (profile: {
     return user;
   }
 
-  // New Google user
   const randomPassword = await generateRandomPassword();
 
   user = await prisma.user.create({
@@ -110,10 +103,7 @@ const findOrCreateGoogleUser = async (profile: {
       visitedCountries: [],
     },
   });
- 
-  console.log(user);
-  
-   
+
   getIO().emit("user-registered", {
     message: "New Google user registered",
     data: user,
@@ -122,9 +112,8 @@ const findOrCreateGoogleUser = async (profile: {
   return user;
 };
 
-/* --------------------------------------------------
-   Get All Users (filter, search, paginate)
---------------------------------------------------- */
+/* ================= GET ALL USERS ================= */
+
 const getAllUsers = async (query: Record<string, any>) => {
   const qb = new PrismaQueryBuilder(query)
     .filter()
@@ -158,25 +147,11 @@ const getAllUsers = async (query: Record<string, any>) => {
   };
 };
 
-/* --------------------------------------------------
-   Get Single User
---------------------------------------------------- */
+/* ================= SINGLE USER ================= */
+
 const getSingleUser = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      fullName: true,
-      email: true,
-      role: true,
-      profilePicture: true,
-      bio: true,
-      travelInterests: true,
-      visitedCountries: true,
-      isVerified: true,
-      createdAt: true,
-    },
   });
 
   if (!user) {
@@ -186,16 +161,14 @@ const getSingleUser = async (userId: string) => {
   return user;
 };
 
-
 const findUserById = async (userId: string) => {
   return prisma.user.findUnique({
     where: { id: userId },
   });
 };
 
-/* --------------------------------------------------
-   Update User Profile
---------------------------------------------------- */
+/* ================= UPDATE PROFILE ================= */
+
 const userUpdateProfile = async (userId: string, payload: any) => {
   const { name, fullName, email, oldPassword, newPassword } = payload;
 
@@ -213,7 +186,6 @@ const userUpdateProfile = async (userId: string, payload: any) => {
   if (fullName) updateData.fullName = fullName;
   if (email) updateData.email = email;
 
-  // change password
   if (oldPassword && newPassword) {
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
@@ -225,30 +197,19 @@ const userUpdateProfile = async (userId: string, payload: any) => {
   return prisma.user.update({
     where: { id: userId },
     data: updateData,
-    select: {
-      id: true,
-      name: true,
-      fullName: true,
-      email: true,
-      role: true,
-      profilePicture: true,
-      updatedAt: true,
-    },
   });
 };
 
-/* --------------------------------------------------
-   Delete User
---------------------------------------------------- */
+/* ================= DELETE ================= */
+
 const deleteUser = async (userId: string) => {
   return prisma.user.delete({
     where: { id: userId },
   });
 };
 
-/* --------------------------------------------------
-   Export
---------------------------------------------------- */
+/* ================= EXPORT ================= */
+
 export const UserService = {
   createUser,
   findOrCreateGoogleUser,

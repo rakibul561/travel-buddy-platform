@@ -4,9 +4,8 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { UserService } from "./user.service";
 
-/* ---------------------------------------
-   Create User
----------------------------------------- */
+/* ================= CREATE USER ================= */
+
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const user = await UserService.createUser(req);
 
@@ -18,9 +17,8 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ---------------------------------------
-   Get All Users (Admin)
----------------------------------------- */
+/* ================= GET ALL USERS ================= */
+
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const result = await UserService.getAllUsers(req.query);
 
@@ -32,9 +30,8 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ---------------------------------------
-   Get Current Logged-in User (/me)
----------------------------------------- */
+/* ================= CURRENT USER ================= */
+
 const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
   const decodedUser = req.user as any;
 
@@ -48,9 +45,8 @@ const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ---------------------------------------
-   Get User By ID (Admin)
----------------------------------------- */
+/* ================= USER BY ID ================= */
+
 const getUserById = catchAsync(async (req: Request, res: Response) => {
   const userId = req.params.id;
 
@@ -64,9 +60,8 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ---------------------------------------
-   Update Current User Profile
----------------------------------------- */
+/* ================= UPDATE PROFILE ================= */
+
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const decodedUser = req.user as any;
   const payload = req.body;
@@ -79,14 +74,13 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: "User profile updated successfully",
+    message: "Profile updated successfully",
     data: updatedUser,
   });
 });
 
-/* ---------------------------------------
-   Delete User (Admin)
----------------------------------------- */
+/* ================= DELETE USER ================= */
+
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const userId = req.params.id;
 
@@ -100,9 +94,8 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ---------------------------------------
-   Export
----------------------------------------- */
+/* ================= EXPORT ================= */
+
 export const UserController = {
   createUser,
   getAllUsers,
