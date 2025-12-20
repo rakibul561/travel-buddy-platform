@@ -1,15 +1,27 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import auth from "../../middlewares/auth";
 import { Role } from "@prisma/client";
 import { TravelPlansController } from "./travelPlans.controller";
+import { fileUpload } from "../../utils/fileUpload";
+import { createTravelPlanValidationSchema } from "./travelPlans.validation";
 
 const router = Router();
 
 /* ================= CREATE TRAVEL PLAN ================= */
 router.post(
   "/",
-  auth(Role.USER, Role.ADMIN),
-  TravelPlansController.createTravelPlan
+   fileUpload.upload.single("file"),
+   (req:Request, res:Response, next:NextFunction) => {
+      try {
+     req.body = createTravelPlanValidationSchema.parse(
+      JSON.parse(req.body.data)
+     );
+     return TravelPlansController.createTravelPlan(req, res, next);
+   } catch (error) {
+    next(error)
+   }
+   }
+  
 );
 
 /* ================= GET ALL TRAVEL PLANS ================= */

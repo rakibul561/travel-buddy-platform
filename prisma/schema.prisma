@@ -70,25 +70,20 @@ model User {
 
 model TravelPlan {
   id              String      @id @default(uuid())
-
   userId          String
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   destination     String
   country         String
   city            String?
+  image           String?  
   startDate       DateTime
   endDate         DateTime
-
   budgetMin       Float?
   budgetMax       Float?
   travelType      TravelType
-
   description     String?
   itinerary       String?
-
   isActive        Boolean     @default(true)
-
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -98,16 +93,12 @@ model TravelPlan {
 
 model Review {
   id          String   @id @default(uuid())
-
   reviewerId  String
   reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-
   reviewedId  String
   reviewed    User     @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
-
   rating      Int
   comment     String
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -117,16 +108,13 @@ model Review {
 
 model Payment {
   id              String   @id @default(uuid())
-
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   amount          Float
   currency        String   @default("USD")
-  status          String   // pending, completed, failed
+  status          String   
   transactionId   String   @unique
   plan            SubscriptionPlan
-
   createdAt       DateTime @default(now())
 
   @@index([userId])
