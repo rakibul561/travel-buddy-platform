@@ -4,10 +4,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-
 }
 
-/* ---------------- ENUMS ---------------- */
+/* =======================
+          ENUMS
+======================= */
 
 enum Role {
   USER
@@ -32,90 +33,171 @@ enum AuthProvider {
   GOOGLE
 }
 
-/* ---------------- MODELS ---------------- */
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum TravelPlanStatus {
+  PLANNED
+  COMPLETED
+}
+
+/* =======================
+          MODELS
+======================= */
 
 model User {
-  id                 String            @id @default(uuid())
-  email              String            @unique
+  id                 String   @id @default(uuid())
+  email              String   @unique
   name               String
   fullName           String?
   password           String
 
-  role               Role              @default(USER)
-  authProvider       AuthProvider      @default(LOCAL)
-  googleId           String?            @unique
+  role               Role            @default(USER)
+  authProvider       AuthProvider    @default(LOCAL)
+  googleId           String?          @unique
 
   profilePicture     String?
   profileImage       String?
   bio                String?
   currentLocation    String?
 
-  travelInterests    String[]           @default([])
-  visitedCountries   String[]           @default([])
+  travelInterests    String[]         @default([])
+  visitedCountries   String[]         @default([])
 
-  isVerified         Boolean            @default(false)
-  subscriptionPlan   SubscriptionPlan   @default(FREE)
+  isVerified         Boolean          @default(false)
+  subscriptionPlan   SubscriptionPlan @default(FREE)
   subscriptionEndsAt DateTime?
 
+  /* Relations */
   travelPlans        TravelPlan[]
-  reviews            Review[]           @relation("ReviewsGiven")
-  receivedReviews    Review[]           @relation("ReviewsReceived")
+  joinRequests       JoinRequest[]    @relation("UserJoinRequests")
+  tripParticipants   TripParticipant[]
+  reviewsGiven       Review[]         @relation("ReviewsGiven")
+  reviewsReceived    Review[]         @relation("ReviewsReceived")
   payments           Payment[]
 
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([email])
 }
 
+/* =======================
+        TRAVEL PLAN
+======================= */
+
 model TravelPlan {
-  id              String      @id @default(uuid())
+  id              String           @id @default(uuid())
   userId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   destination     String
   country         String
   city            String?
-  image           String?  
+  image           String?
   startDate       DateTime
   endDate         DateTime
+
   budgetMin       Float?
   budgetMax       Float?
   travelType      TravelType
+
   description     String?
   itinerary       String?
-  isActive        Boolean     @default(true)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+
+  status          TravelPlanStatus  @default(PLANNED)
+  isActive        Boolean           @default(true)
+
+  /* Relations */
+  joinRequests    JoinRequest[]
+  participants    TripParticipant[]
+  reviews         Review[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([userId])
   @@index([destination, startDate])
 }
 
-model Review {
-  id          String   @id @default(uuid())
-  reviewerId  String
-  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewedId  String
-  reviewed    User     @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
-  rating      Int
-  comment     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+/* =======================
+        JOIN REQUEST
+======================= */
 
-  @@index([reviewedId])
-  @@unique([reviewerId, reviewedId])
+model JoinRequest {
+  id            String            @id @default(uuid())
+  travelPlanId  String
+  requesterId   String
+  status        JoinRequestStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+
+  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  requester     User       @relation("UserJoinRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([travelPlanId, requesterId])
+  @@index([travelPlanId])
 }
 
+/* =======================
+      TRIP PARTICIPANT
+======================= */
+
+model TripParticipant {
+  id            String      @id @default(uuid())
+  travelPlanId  String
+  userId        String
+  joinedAt      DateTime    @default(now())
+
+  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([travelPlanId, userId])
+  @@index([userId])
+}
+
+/* =======================
+           REVIEW
+======================= */
+
+model Review {
+  id            String   @id @default(uuid())
+  reviewerId    String
+  reviewedId    String
+  travelPlanId  String
+
+  rating        Int
+  comment       String
+
+  reviewer      User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewed      User       @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
+  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([reviewerId, reviewedId, travelPlanId])
+  @@index([travelPlanId])
+}
+
+/* =======================
+           PAYMENT
+======================= */
+
 model Payment {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount          Float
-  currency        String   @default("USD")
-  status          String   
-  transactionId   String   @unique
-  plan            SubscriptionPlan
-  createdAt       DateTime @default(now())
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount        Float
+  currency      String   @default("USD")
+  status        String
+  transactionId String   @unique
+  plan          SubscriptionPlan
+
+  createdAt     DateTime @default(now())
 
   @@index([userId])
 }

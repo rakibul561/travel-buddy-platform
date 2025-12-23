@@ -28,9 +28,6 @@ router.post(
     }
   }
 );
-
-
-/* ================= GET ALL TRAVEL PLANS ================= */
 router.get(
   "/",
   auth(Role.USER, Role.ADMIN),
@@ -43,21 +40,27 @@ router.get(
   TravelPlansController.matchTravelers
 );
 
-/* ================= GET BY ID ================= */
 router.get(
   "/:id",
   auth(Role.USER, Role.ADMIN),
   TravelPlansController.getTravelPlanById
 );
 
-/* ================= UPDATE ================= */
 router.patch(
   "/:id",
   auth(Role.USER, Role.ADMIN),
   TravelPlansController.updateTravelPlan
 );
 
-/* ================= DELETE ================= */
+ 
+// Trip complete
+router.patch(
+  "/:id/complete",
+  auth(Role.USER),
+  TravelPlansController.completeTrip
+);
+
+
 router.delete(
   "/:id",
   auth(Role.USER, Role.ADMIN),

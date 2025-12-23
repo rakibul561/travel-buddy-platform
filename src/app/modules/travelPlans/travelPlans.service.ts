@@ -203,7 +203,28 @@ const matchTravelers = async (query: MatchQuery & { userId: string }) => {
   });
 };
 
-/* ================= EXPORT ================= */
+const completeTrip = async (userId: string, tripId: string) => {
+  const trip = await prisma.travelPlan.findUnique({
+    where: { id: tripId },
+  });
+
+  if (!trip) {
+    throw new ApiError(404, "Trip not found");
+  }
+
+  if (trip.userId !== userId) {
+    throw new ApiError(403, "Only owner can complete the trip");
+  }
+
+  return prisma.travelPlan.update({
+    where: { id: tripId },
+    data: {
+      status: "COMPLETED",
+      isActive: false,
+    },
+  });
+};
+
 
 export const TravelPlanService = {
   createTravelPlan,
@@ -212,4 +233,5 @@ export const TravelPlanService = {
   updateTravelPlan,
   deleteTravelPlan,
   matchTravelers,
+  completeTrip
 };

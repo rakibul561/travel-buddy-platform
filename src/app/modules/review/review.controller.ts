@@ -1,15 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { ReviewService } from "./review.service";
 
 const createReview = catchAsync(async (req: Request, res: Response) => {
-  const result = await ReviewService.createReview(req);
+  const reviewerId = (req.user as any).userId;
+
+  const result = await ReviewService.createReview(reviewerId, req.body);
 
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: 201,
     success: true,
-    message: "review created successfully",
+    message: "Review submitted successfully",
     data: result,
   });
 });

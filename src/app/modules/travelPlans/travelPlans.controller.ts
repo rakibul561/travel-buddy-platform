@@ -106,7 +106,6 @@ const deleteTravelPlan = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/* ================= MATCH ================= */
 
 const matchTravelers = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
@@ -140,7 +139,23 @@ const matchTravelers = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-/* ================= EXPORT ================= */
+const completeTrip = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).userId;
+  const { id } = req.params;
+
+  const result = await TravelPlanService.completeTrip(userId, id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Trip marked as completed",
+    data: result,
+  });
+});
+
+
+
+
 
 export const TravelPlansController = {
   createTravelPlan,
@@ -149,4 +164,5 @@ export const TravelPlansController = {
   updateTravelPlan,
   deleteTravelPlan,
   matchTravelers,
+  completeTrip
 };

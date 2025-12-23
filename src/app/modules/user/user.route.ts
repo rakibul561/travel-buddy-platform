@@ -47,7 +47,7 @@ router.post(
   }
 );
 
-/* ================= CURRENT USER ================= */
+
 
 router.get(
   "/me",
