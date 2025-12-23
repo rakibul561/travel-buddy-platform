@@ -13,12 +13,22 @@ import { prisma } from "../../prisma/prisma";
 
 /* ================= CREATE ================= */
 
-const createTravelPlan = async (userId: string, data: CreateTravelPlanDTO) => {
+const createTravelPlan = async (
+  userId: string,
+  data: CreateTravelPlanDTO & { image?: string | null }
+) => {
   return prisma.travelPlan.create({
     data: {
-      ...data,
+      destination: data.destination,
+      country: data.country,
+      city: data.city,
+      image: data.image ?? null,
       startDate: new Date(data.startDate),
       endDate: new Date(data.endDate),
+      budgetMin: data.budgetMin,
+      budgetMax: data.budgetMax,
+      travelType: data.travelType,
+      description: data.description,
       userId,
     },
     include: {
@@ -137,7 +147,7 @@ const deleteTravelPlan = async (id: string, userId: string) => {
 
 /* ================= MATCH TRAVELERS ================= */
 
-const matchTravelers = async (query: MatchQuery) => {
+const matchTravelers = async (query: MatchQuery & { userId: string }) => {
   const {
     destination,
     startDate,
@@ -145,6 +155,7 @@ const matchTravelers = async (query: MatchQuery) => {
     minBudget,
     maxBudget,
     flexDays = 3,
+    userId,
   } = query;
 
   const flexStartDate = new Date(startDate);
@@ -158,23 +169,34 @@ const matchTravelers = async (query: MatchQuery) => {
       contains: destination,
       mode: "insensitive",
     },
+    userId: {
+      not: userId, // 🔥 own plan exclude
+    },
+    isActive: true,
     AND: [
       { startDate: { lte: flexEndDate } },
       { endDate: { gte: flexStartDate } },
     ],
   };
 
-  if (minBudget || maxBudget) {
-    where.budget = {};
-    if (minBudget) where.budget.gte = minBudget;
-    if (maxBudget) where.budget.lte = maxBudget;
+  // ✅ Correct budget logic
+  if (minBudget !== undefined) {
+    where.budgetMax = { gte: minBudget };
+  }
+
+  if (maxBudget !== undefined) {
+    where.budgetMin = { lte: maxBudget };
   }
 
   return prisma.travelPlan.findMany({
     where,
     include: {
       user: {
-        select: { id: true, name: true, email: true },
+        select: {
+          id: true,
+          name: true,
+          profilePicture: true, // ✅ email বাদ
+        },
       },
     },
     orderBy: { createdAt: "desc" },

@@ -3,15 +3,31 @@ import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import { TravelPlanService } from "./travelPlans.service";
+import { fileUpload } from "../../utils/fileUpload";
+import ApiError from "../../errors/apiError";
 
-/* ================= CREATE ================= */
+
 
 const createTravelPlan = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
 
+  let image: string | null = null;
+
+  // 🔥 Cloudinary upload
+  if (req.file) {
+    const uploadResult = await fileUpload.uploadToCloudinary(req.file);
+
+    image = uploadResult?.secure_url || null;
+  }
+
+  const payload = {
+    ...req.body,
+    image,
+  };
+
   const travelPlan = await TravelPlanService.createTravelPlan(
     userId,
-    req.body
+    payload
   );
 
   sendResponse(res, {
@@ -21,6 +37,9 @@ const createTravelPlan = catchAsync(async (req: Request, res: Response) => {
     data: travelPlan,
   });
 });
+
+
+
 
 /* ================= GET ALL ================= */
 
@@ -90,6 +109,12 @@ const deleteTravelPlan = catchAsync(async (req: Request, res: Response) => {
 /* ================= MATCH ================= */
 
 const matchTravelers = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).userId;
+
+  if (!req.query.destination || !req.query.startDate || !req.query.endDate) {
+    throw new ApiError(400, "Destination and date range are required");
+  }
+
   const query = {
     destination: req.query.destination as string,
     startDate: new Date(req.query.startDate as string),
@@ -101,6 +126,7 @@ const matchTravelers = catchAsync(async (req: Request, res: Response) => {
       ? Number(req.query.maxBudget)
       : undefined,
     flexDays: req.query.flexDays ? Number(req.query.flexDays) : 3,
+    userId,
   };
 
   const matches = await TravelPlanService.matchTravelers(query);
@@ -112,6 +138,7 @@ const matchTravelers = catchAsync(async (req: Request, res: Response) => {
     data: matches,
   });
 });
+
 
 /* ================= EXPORT ================= */
 

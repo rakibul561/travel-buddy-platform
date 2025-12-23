@@ -10,19 +10,25 @@ const router = Router();
 /* ================= CREATE TRAVEL PLAN ================= */
 router.post(
   "/",
-   fileUpload.upload.single("file"),
-   (req:Request, res:Response, next:NextFunction) => {
-      try {
-     req.body = createTravelPlanValidationSchema.parse(
-      JSON.parse(req.body.data)
-     );
-     return TravelPlansController.createTravelPlan(req, res, next);
-   } catch (error) {
-    next(error)
-   }
-   }
-  
+  auth(Role.USER, Role.ADMIN),
+  fileUpload.upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // form-data এর text অংশ parse + validate
+      const parsedData = createTravelPlanValidationSchema.parse(
+        JSON.parse(req.body.data)
+      );
+
+      // validated data overwrite
+      req.body = parsedData;
+
+      return TravelPlansController.createTravelPlan(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
 );
+
 
 /* ================= GET ALL TRAVEL PLANS ================= */
 router.get(
@@ -31,7 +37,6 @@ router.get(
   TravelPlansController.getAllTravelPlans
 );
 
-/* ================= MATCH TRAVELERS ================= */
 router.get(
   "/match",
   auth(Role.USER, Role.ADMIN),
