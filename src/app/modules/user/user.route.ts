@@ -30,7 +30,6 @@ router.get(
   }
 );
 
-/* ================= CREATE USER ================= */
 
 router.post(
   "/register",
@@ -47,23 +46,30 @@ router.post(
   }
 );
 
-
-
 router.get(
   "/me",
   auth(Role.USER, Role.ADMIN),
   UserController.getCurrentUser
 );
 
-/* ================= UPDATE PROFILE ================= */
 
+// profile Update
 router.patch(
   "/profile",
   auth(Role.USER, Role.ADMIN),
-  UserController.updateProfile
+  fileUpload.upload.single("file"),
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (req.body.data) {
+        req.body = JSON.parse(req.body.data);
+      }
+      return UserController.updateProfile(req, res, next);
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
-/* ================= ADMIN ROUTES ================= */
 
 router.get(
   "/",

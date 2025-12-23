@@ -169,7 +169,11 @@ const findUserById = async (userId: string) => {
 
 /* ================= UPDATE PROFILE ================= */
 
-const userUpdateProfile = async (userId: string, payload: any) => {
+const userUpdateProfile = async (
+  userId: string,
+  payload: any,
+  file?: Express.Multer.File
+) => {
   const { name, fullName, email, oldPassword, newPassword } = payload;
 
   const user = await prisma.user.findUnique({
@@ -182,10 +186,12 @@ const userUpdateProfile = async (userId: string, payload: any) => {
 
   const updateData: any = {};
 
+  // Basic fields
   if (name) updateData.name = name;
   if (fullName) updateData.fullName = fullName;
   if (email) updateData.email = email;
 
+  // Password change
   if (oldPassword && newPassword) {
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
@@ -194,13 +200,24 @@ const userUpdateProfile = async (userId: string, payload: any) => {
     updateData.password = await bcrypt.hash(newPassword, 10);
   }
 
+  // 🔥 Profile Image Update
+  if (file) {
+    const uploadedResult = await fileUpload.uploadToCloudinary(file);
+
+    if (!uploadedResult?.secure_url) {
+      throw new ApiError(500, "Image upload failed");
+    }
+
+    updateData.profilePicture = uploadedResult.secure_url;
+  }
+
   return prisma.user.update({
     where: { id: userId },
     data: updateData,
   });
 };
 
-/* ================= DELETE ================= */
+
 
 const deleteUser = async (userId: string) => {
   return prisma.user.delete({

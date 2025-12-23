@@ -63,11 +63,11 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 
 const updateProfile = catchAsync(async (req: Request, res: Response) => {
   const decodedUser = req.user as any;
-  const payload = req.body;
 
   const updatedUser = await UserService.userUpdateProfile(
     decodedUser.userId,
-    payload
+    req.body,
+    req.file // 👈 file pass করলাম
   );
 
   sendResponse(res, {
