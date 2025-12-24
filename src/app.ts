@@ -6,18 +6,21 @@ import passport from "./app/config/passport.config";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import notFound from "./app/middlewares/notFound";
 import router from "./app/routes";
-import { PaymentController } from "./app/modules/payment/payemnt.controller";
 import config from "./app/config";
 import morgan from 'morgan'
+import { stripeWebhook } from "./app/modules/payment/payment.webhook";
 
 const app: Application = express();
+import bodyParser from "body-parser";
+
 
 // Webhook must be before other middleware
 app.post(
-    "/webhook",
-    express.raw({ type: "application/json" }),
-    PaymentController.handleStripeWebhooksEvent
+  "/webhook",
+  bodyParser.raw({ type: "application/json" }),
+  stripeWebhook
 );
+
 
 app.use(cors({
     origin: ["http://localhost:3000", "http://localhost:5173"],

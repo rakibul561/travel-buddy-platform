@@ -29,9 +29,11 @@ export default {
 
     stripe: {
         stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-        stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
-        stripeWebHookSecret: process.env.STRIPE_WEBHOOKS_SECRET,
-        frontendUrl: process.env.FRONTEND_URL
+        stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY,
+        stripeWebHookSecret: process.env.STRIPE_WEBHOOK_SECRET, // ✅ Fixed: was STRIPE_WEBHOOKS_SECRET
+        frontendUrl: process.env.FRONTEND_URL,
+        monthlyPriceId: process.env.STRIPE_MONTHLY_PRICE_ID, // ✅ Fixed: was missing
+        yearlyPriceId: process.env.STRIPE_YEARLY_PRICE_ID      // ✅ Fixed: was missing
     },
 
     username: process.env.REDIS_USERNAME,
@@ -42,14 +44,12 @@ export default {
         port: Number(process.env.REDIS_PORT)
     },
 
-    // Google OAuth (NEW)
     google: {
         clientId: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/v1/users/auth/google/callback',
     },
 
-    // Session Secret (NEW)
     session: {
         secret: process.env.SESSION_SECRET || 'fallback-secret-change-this-in-production',
     },
