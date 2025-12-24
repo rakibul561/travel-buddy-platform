@@ -1,65 +1,162 @@
-
 import Stripe from "stripe";
-import { sendEmail } from "../../utils/emailSender";
+import { stripe } from "../../utils/stripe";
+import { prisma } from "../../prisma/prisma";
+import { SubscriptionPlan } from "@prisma/client";
 
+/* ================== PRICE IDS ================== */
+const PRICE_MAP = {
+  MONTHLY: "price_MONTHLY_ID_FROM_STRIPE",
+  YEARLY: "price_YEARLY_ID_FROM_STRIPE"
+};
 
+// CREATE CHECKOUT
+const createSubscriptionCheckout = async (
+  planType: "MONTHLY" | "YEARLY",
+  userEmail: string
+) => {
+  const user = await prisma.user.findUnique({
+    where: { email: userEmail }
+  });
+
+  if (!user) throw new Error("User not found");
+
+  if (user.subscriptionPlan !== SubscriptionPlan.FREE) {
+    throw new Error("Already subscribed");
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    payment_method_types: ["card"],
+    customer_email: user.email,
+
+    line_items: [
+      {
+        price: PRICE_MAP[planType],
+        quantity: 1
+      }
+    ],
+
+    metadata: {
+      userId: user.id,
+      userEmail: user.email,
+      planType
+    },
+
+    success_url: "http://localhost:3000/payment/success",
+    cancel_url: "http://localhost:3000/payment/cancel"
+  });
+
+  return {
+    sessionId: session.id,
+    url: session.url
+  };
+};
+
+// HANDLE WEBHOOK
 const handleStripeWebhooksEvent = async (event: Stripe.Event) => {
+  if (event.type !== "checkout.session.completed") return;
 
-    switch (event.type) {
-        case "checkout.session.completed": {
-            const session = event.data.object as Stripe.Checkout.Session;
-            const orderId = session.metadata?.orderId;
+  const session = event.data.object as Stripe.Checkout.Session;
 
-            if (!orderId) break;
+  const userId = session.metadata?.userId;
+  const planType = session.metadata?.planType as "MONTHLY" | "YEARLY";
 
-            // ! update payment status 
-            await sendEmail({
-                to: session.customer_email as string,
-                subject: "Payment Successful 🎉",
-                html: `
-      <h2>Payment Confirmed</h2>
-      <p>Amount: $${session.amount_total as number / 100} USD</p>
-    `,
-            });
+  if (!userId || !planType) {
+    console.log("❌ Missing metadata");
+    return;
+  }
 
-            break;
-        }
+  const duration = planType === "MONTHLY" ? 30 : 365;
 
-        case "payment_intent.succeeded": {
-            const paymentIntent = event.data.object as Stripe.PaymentIntent;
-            const orderId = paymentIntent.metadata?.orderId;
+  const subscriptionEndsAt = new Date();
+  subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + duration);
 
-            if (!orderId) break;
+  const plan =
+    planType === "MONTHLY"
+      ? SubscriptionPlan.MONTHLY
+      : SubscriptionPlan.YEARLY;
 
-            //    ! update payment stats and order status
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionPlan: plan,
+        isVerified: true,
+        subscriptionEndsAt
+      }
+    });
 
+    await tx.payment.create({
+      data: {
+        userId,
+        amount: (session.amount_total ?? 0) / 100,
+        currency: "BDT",
+        status: "completed",
+        transactionId: session.payment_intent as string,
+        plan
+      }
+    });
+  });
 
-            break;
-        }
+  console.log("✅ Subscription activated for user:", userId);
+};
 
-        case "charge.succeeded": {
-            const charge = event.data.object as Stripe.Charge;
-            const orderId = charge.metadata?.orderId;
+// VERIFY SUBSCRIPTION
+const verifySubscription = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-            if (!orderId) break;
+  if (!user) throw new Error("User not found");
 
-            // await prisma.order.update({
-            //     where: { id: orderId },
-            //     data: {
-            //         paymentStatus: PaymentStatus.PAID,
-            //     },
-            // });
-            // console.log(`Order ${orderId} updated from charge.succeeded`);
-            break;
-        }
+  const now = new Date();
 
-        default:
-            console.log(`Unhandled event type: ${event.type}`);
-    }
+  if (
+    user.subscriptionPlan !== SubscriptionPlan.FREE &&
+    user.subscriptionEndsAt &&
+    now > user.subscriptionEndsAt
+  ) {
+    await prisma.user.update({
+      where: { email },
+      data: {
+        subscriptionPlan: SubscriptionPlan.FREE,
+        isVerified: false,
+        subscriptionEndsAt: null
+      }
+    });
 
-    return { received: true };
+    return {
+      isPremium: false,
+      subscriptionPlan: "FREE",
+      subscriptionEndsAt: null
+    };
+  }
+
+  return {
+    isPremium: user.subscriptionPlan !== SubscriptionPlan.FREE,
+    subscriptionPlan: user.subscriptionPlan,
+    subscriptionEndsAt: user.subscriptionEndsAt
+  };
+};
+
+// PAYMENT HISTORY
+const getPaymentHistory = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true }
+  });
+
+  if (!user) throw new Error("User not found");
+
+  return prisma.payment.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" }
+  });
 };
 
 export const PaymentService = {
-    handleStripeWebhooksEvent
+  createSubscriptionCheckout,
+  handleStripeWebhooksEvent,
+  verifySubscription,
+  getPaymentHistory
 };

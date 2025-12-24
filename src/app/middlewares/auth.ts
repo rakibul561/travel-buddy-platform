@@ -8,9 +8,18 @@ const auth = (...roles: string[]) => {
     return async (req: Request & { user?: any }, res: Response, next: NextFunction) => {
         try {
             let user;
+            let token;
 
-            // First, check for JWT token (for regular login)
-            const token = req.cookies.accessToken;
+            // First, try to get token from Authorization header
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1];
+            }
+            
+            // If no header token, check cookies
+            if (!token) {
+                token = req.cookies.accessToken;
+            }
             
             if (token) {
                 // JWT authentication
@@ -45,4 +54,3 @@ const auth = (...roles: string[]) => {
 }
 
 export default auth;
-

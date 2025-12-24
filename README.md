@@ -1,253 +1,254 @@
+# Travel Buddy & Meetup - Backend API
 
----
+A RESTful API for connecting travelers and helping them find compatible companions for their trips. Built with Node.js, Express, Prisma, and PostgreSQL.
 
-```md
-# 🌍 Travel Buddy & Meetup Platform
+## 🚀 Features
 
-A full-stack social travel platform that helps travelers find compatible travel companions, plan trips together, and build trust through reviews and ratings.
+- **User Authentication & Authorization** - JWT-based authentication with role-based access control
+- **User Profile Management** - Complete CRUD operations for user profiles with image upload
+- **Travel Plan Management** - Create, read, update, and delete travel plans
+- **Smart Matching System** - Find compatible travel buddies based on destination, dates, and interests
+- **Review & Rating System** - Post-trip reviews and ratings for building trust
+- **Payment Integration** - Stripe integration for subscription plans and premium features
+- **Image Upload** - Cloudinary integration for profile and media uploads
 
----
+## 🛠️ Tech Stack
 
-## 📌 Project Overview
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Authentication:** JWT (JSON Web Tokens)
+- **Image Storage:** Cloudinary
+- **Payment Gateway:** Stripe
+- **Validation:** Zod / Express-validator
+- **Security:** bcrypt, helmet, cors
 
-**Travel Buddy & Meetup Platform** aims to create meaningful connections among travelers by helping them discover others traveling to similar destinations.  
-The platform combines **travel planning + social networking**, allowing users to share trips, match with others, join travel plans, and review companions after trips are completed.
+## 📋 Prerequisites
 
-This is a **subscription-based platform** with premium features such as unlimited trip creation, joining multiple trips, and verified badges.
+- Node.js (v16 or higher)
+- PostgreSQL (v13 or higher)
+- npm or yarn
+- Cloudinary account
+- Stripe account
 
----
+## ⚙️ Installation
 
-## 🎯 Objectives
-
-- Build a social-travel web platform for connecting travelers  
-- Enable trip sharing and traveler matching  
-- Allow users to create detailed travel profiles and itineraries  
-- Provide a secure and engaging UI/UX  
-- Implement role-based authentication and persistence  
-- Introduce premium subscriptions for advanced features  
-
----
-
-## 🚀 Core Features
-
-### 🔐 Authentication & Authorization
-- Email & Password authentication
-- JWT-based secure authentication
-- Role-based access control:
-  - **User**
-  - **Admin**
-- Secure password hashing with bcrypt
-
----
-
-### 👤 User Profile Management (CRUD)
-- Create & update profile
-- Upload profile image (Cloudinary / ImgBB)
-- Bio / About section
-- Travel interests (hiking, food tours, photography, etc.)
-- Visited countries
-- Current location
-- Public profile view
-
----
-
-### 🧳 Travel Plan Management (CRUD)
-- Create, update, delete travel plans
-- Destination (country, city)
-- Start & end dates
-- Budget range
-- Travel type (Solo, Family, Friends, Couple)
-- Description & itinerary
-- Public visibility for matching & discovery
-
----
-
-### 🔍 Search & Matching System
-- Search travelers by:
-  - Destination
-  - Date range
-  - Travel type
-- Flexible date matching
-- Discover compatible travel buddies
-
----
-
-### 🤝 Join Request System
-- Send join requests to travel plans
-- Trip owner can **accept or reject** requests
-- Prevent duplicate join requests
-- Prevent joining completed trips
-- Auto-create participants on acceptance
-
----
-
-### ⭐ Review & Rating System
-- Only available **after trip completion**
-- Only trip participants can review each other
-- One review per user per trip
-- Rating (1–5 stars)
-- Written reviews
-- Display average rating & recent reviews on profiles
-
----
-
-### 💳 Payment & Subscription System
-- Subscription plans:
-  - **FREE**
-  - **MONTHLY**
-  - **YEARLY**
-- Payment gateway integration:
-  - Stripe (primary)
-  - SSLCommerz (optional)
-- Premium features:
-  - Unlimited travel plans
-  - Unlimited join requests
-  - Review access
-  - Verified badge
-- Subscription expiry handling
-
----
-
-## 🧑‍💻 Roles & Permissions
-
-### 👤 User
-- Create & manage travel plans
-- Match with travelers
-- Send join requests
-- Join trips
-- Review travel partners
-- Upgrade subscription
-
-### 🛡 Admin
-- Manage users
-- Manage travel plans
-- Monitor platform activity
-
----
-
-## 🖥 Pages & Routes
-
-### Public Pages
-- `/` – Home / Landing Page
-- `/login` – Login
-- `/register` – Registration
-- `/explore` – Search & match travelers
-
-### Authenticated User Pages
-- `/profile/[id]` – User profile
-- `/travel-plans` – My travel plans
-- `/travel-plans/[id]` – Travel plan details
-- `/dashboard` – User dashboard
-
-### Admin Pages
-- `/admin/dashboard`
-- `/admin/users`
-- `/admin/travel-plans`
-
----
-
-## 🗂 Folder Structure
-
-### Frontend
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd travel-buddy-backend
 ```
 
-frontend/
-├── app/
-│   ├── (auth)/login, register
-│   ├── (user)/profile, travel-plans
-│   ├── components/
-│   ├── utils/
-│   └── styles/
-
+2. **Install dependencies**
+```bash
+npm install
 ```
 
-### Backend
+3. **Set up environment variables**
+
+Create a `.env` file in the root directory:
+
+```env
+# Server
+NODE_ENV=development
+PORT=5000
+
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/travel_buddy"
+
+# JWT
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=7d
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Stripe
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
+
+# Client URL (for CORS)
+CLIENT_URL=http://localhost:3000
 ```
 
+4. **Set up the database**
+```bash
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# (Optional) Seed the database
+npm run seed
+```
+
+5. **Start the development server**
+```bash
+npm run dev
+```
+
+The API will be available at `http://localhost:5000`
+
+## 📁 Project Structure
+
+```
 backend/
 ├── src/
+│   ├── config/           # Configuration files (db, cloudinary, stripe)
+│   ├── middleware/       # Custom middleware (auth, error handling, validation)
 │   ├── modules/
-│   │   ├── auth/
-│   │   ├── users/
-│   │   ├── travelPlans/
-│   │   ├── joinRequests/
-│   │   ├── reviews/
-│   │   ├── payments/
-│   ├── middlewares/
-│   ├── utils/
-│   └── routes/
-
+│   │   ├── auth/         # Authentication routes & controllers
+│   │   ├── users/        # User management
+│   │   ├── travelPlans/  # Travel plan CRUD
+│   │   ├── reviews/      # Review system
+│   │   ├── payments/     # Payment integration
+│   │   └── matching/     # Traveler matching logic
+│   ├── utils/            # Helper functions & utilities
+│   ├── validators/       # Request validation schemas
+│   ├── app.js            # Express app setup
+│   └── server.js         # Server entry point
+├── prisma/
+│   ├── schema.prisma     # Database schema
+│   ├── migrations/       # Database migrations
+│   └── seed.js           # Database seeding script
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
 ```
 
----
+## 🔌 API Endpoints
 
-## 🌐 API Endpoints (Sample)
+### Authentication
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/register` | Register new user | No |
+| POST | `/api/auth/login` | Login user | No |
+| POST | `/api/auth/refresh` | Refresh access token | Yes |
+| POST | `/api/auth/logout` | Logout user | Yes |
 
-| Method | Endpoint | Description |
-|------|---------|------------|
-| POST | `/api/auth/register` | Register user |
-| POST | `/api/auth/login` | Login user |
-| GET | `/api/users/:id` | Get user profile |
-| PATCH | `/api/users/profile` | Update profile |
-| POST | `/api/travel-plans` | Create travel plan |
-| GET | `/api/travel-plans` | Get all plans |
-| GET | `/api/travel-plans/match` | Match travelers |
-| POST | `/api/join-requests` | Send join request |
-| PATCH | `/api/join-requests/:id` | Accept/Reject request |
-| PATCH | `/api/travel-plans/:id/complete` | Complete trip |
-| POST | `/api/reviews` | Add review |
-| POST | `/api/payments/create-intent` | Create payment intent |
+### Users
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/users/:id` | Get user profile | Yes |
+| PATCH | `/api/users/:id` | Update user profile | Yes (Owner) |
+| DELETE | `/api/users/:id` | Delete user | Yes (Owner/Admin) |
+| GET | `/api/users` | Get all users (Admin) | Yes (Admin) |
 
----
+### Travel Plans
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/travel-plans` | Create travel plan | Yes |
+| GET | `/api/travel-plans` | Get all travel plans | No |
+| GET | `/api/travel-plans/:id` | Get travel plan details | No |
+| PATCH | `/api/travel-plans/:id` | Update travel plan | Yes (Owner) |
+| DELETE | `/api/travel-plans/:id` | Delete travel plan | Yes (Owner/Admin) |
+| GET | `/api/travel-plans/user/:userId` | Get user's travel plans | Yes |
 
-## 🛠 Tech Stack
+### Matching
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/match` | Search & match travelers | Yes |
+| POST | `/api/match/request` | Send buddy request | Yes |
 
-### Frontend
-- React / Next.js
-- TypeScript
-- Tailwind CSS
-- Redux Toolkit (optional)
+### Reviews
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/reviews` | Create review | Yes |
+| GET | `/api/reviews/user/:userId` | Get user reviews | No |
+| PATCH | `/api/reviews/:id` | Update review | Yes (Owner) |
+| DELETE | `/api/reviews/:id` | Delete review | Yes (Owner) |
 
-### Backend
-- Node.js
-- Express.js
-- TypeScript
-- Prisma ORM
-- PostgreSQL 
-- JWT Authentication
-- Cloudinary (Image Upload)
-- Stripe 
+### Payments
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/payments/create-intent` | Create payment intent | Yes |
+| POST | `/api/payments/webhook` | Stripe webhook handler | No |
+| GET | `/api/payments/subscription` | Get subscription status | Yes |
 
----
+## 🗄️ Database Schema
+
+### Key Models
+
+- **User** - User accounts with profile information
+- **TravelPlan** - Travel itineraries and plans
+- **Review** - User reviews and ratings
+- **Subscription** - Premium subscription records
+- **BuddyRequest** - Travel companion requests
+
+See `prisma/schema.prisma` for complete schema details.
 
 ## 🔒 Security Features
+
+- Password hashing with bcrypt
 - JWT-based authentication
-- Role-based authorization
-- Password hashing
-- Secure file uploads
-- API validation with Zod
-- Prevent duplicate actions (join/review)
+- Role-based access control (User, Admin)
+- Input validation and sanitization
+- Rate limiting
+- CORS configuration
+- Helmet.js for security headers
+- SQL injection prevention via Prisma
 
----
+## 🧪 Testing
 
-## 📈 Future Enhancements
-- Real-time notifications
-- Google Maps integration
-- In-app chat system
-- Push notifications
-- AI-based travel recommendations
+```bash
+# Run tests
+npm test
 
----
-
-## 🧑‍🎓 Author
-**Rakib**  
-Frontend & Backend Developer (MERN Stack)
-
----
-
-## ⭐ If you like this project
-Give it a ⭐ on GitHub — it helps a lot!
+# Run tests with coverage
+npm run test:coverage
 ```
 
----
+## 📝 Scripts
 
+```bash
+npm run dev          # Start development server with nodemon
+npm start            # Start production server
+npm run build        # Build for production
+npm test             # Run tests
+npm run migrate      # Run database migrations
+npm run seed         # Seed database
+npm run prisma:studio # Open Prisma Studio
+```
+
+## 🚀 Deployment
+
+### Using Railway/Render/Heroku
+
+1. Set up environment variables on your platform
+2. Connect your PostgreSQL database
+3. Deploy from GitHub repository
+4. Run migrations: `npx prisma migrate deploy`
+
+### Using Docker
+
+```bash
+docker-compose up -d
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+
+## 🙏 Acknowledgments
+
+- Express.js community
+- Prisma documentation
+- Stripe API guides
+
+
+**Happy Coding! 🎉**

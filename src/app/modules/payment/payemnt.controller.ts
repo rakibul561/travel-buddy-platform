@@ -1,32 +1,93 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import catchAsync from "../../utils/catchAsync";
+import httpStatus from "http-status";
+import sendResponse from "../../utils/sendResponse";
 import config from "../../config";
 import { stripe } from "../../utils/stripe";
-import sendResponse from "../../utils/sendResponse";
 import { PaymentService } from "./payment.service";
 
+// CREATE CHECKOUT
+const createSubscriptionCheckout = catchAsync(async (req: Request, res: Response) => {
+  const { planType } = req.body;
+  const user = req.user as any;
 
-const handleStripeWebhooksEvent = catchAsync(async (req: Request, res: Response) => {
-    const sig = req.headers["stripe-signature"] as string;
-    const webSecret = config.stripe.stripeWebHookSecret;
-
-    let event;
-    try {
-        event = stripe.webhooks.constructEvent(req.body, sig, webSecret as string);
-    } catch (err: any) {
-        console.log("❌ Webhook signature verification failed:", err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    const result = await PaymentService.handleStripeWebhooksEvent(event);
-
-    sendResponse(res, {
-        statusCode: 200,
-        success: true,
-        message: "Webhook handled successfully",
-        data: result
+  if (!user?.email) {
+    return sendResponse(res, {
+      statusCode: httpStatus.UNAUTHORIZED,
+      success: false,
+      message: "User not authenticated"
     });
+  }
+
+  const result = await PaymentService.createSubscriptionCheckout(
+    planType,
+    user.email
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Checkout session created",
+    data: result
+  });
 });
 
-export const PaymentController = { handleStripeWebhooksEvent };
+// STRIPE WEBHOOK
+const handleStripeWebhooksEvent = catchAsync(async (req: Request, res: Response) => {
+  const sig = req.headers["stripe-signature"] as string;
+
+  if (!config.stripe.stripeWebHookSecret) {
+    return sendResponse(res, {
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: "Stripe webhook secret not configured"
+    });
+  }
+
+  const event = stripe.webhooks.constructEvent(
+    req.body,
+    sig,
+    config.stripe.stripeWebHookSecret
+  );
+
+  await PaymentService.handleStripeWebhooksEvent(event);
+
+  // ⚠️ Stripe only needs 200
+  return res.status(200).send("ok");
+});
+
+// VERIFY SUBSCRIPTION
+const verifySubscription = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as any;
+
+  const result = await PaymentService.verifySubscription(user.email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Subscription status retrieved",
+    data: result
+  });
+});
+
+// PAYMENT HISTORY
+const getPaymentHistory = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as any;
+
+  const result = await PaymentService.getPaymentHistory(user.email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payment history retrieved",
+    data: result
+  });
+});
+
+export const PaymentController = {
+  createSubscriptionCheckout,
+  handleStripeWebhooksEvent,
+  verifySubscription,
+  getPaymentHistory
+};
