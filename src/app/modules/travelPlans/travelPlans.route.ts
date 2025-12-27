@@ -14,12 +14,11 @@ router.post(
   fileUpload.upload.single("file"),
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      // form-data এর text অংশ parse + validate
+      
       const parsedData = createTravelPlanValidationSchema.parse(
         JSON.parse(req.body.data)
       );
 
-      // validated data overwrite
       req.body = parsedData;
 
       return TravelPlansController.createTravelPlan(req, res, next);

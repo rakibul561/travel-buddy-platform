@@ -6,7 +6,6 @@ dotenv.config(); // 👈 MUST BE FIRST LINE
 import http, { Server } from "http";
 import app from "./app";
 import config from "./app/config";
-import { initSocket } from "./app/utils/socket";
 import { connectRedis } from "./app/config/redis.config";
 import { prisma } from "./app/prisma/prisma";
 
@@ -28,7 +27,6 @@ async function bootstrap() {
         await connectDb()
         server = http.createServer(app);
         // * Initialize Socket.IO
-        initSocket(server);
 
         server.listen(config.port, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);

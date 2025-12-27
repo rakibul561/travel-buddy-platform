@@ -3,7 +3,6 @@ import { Request } from "express";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../prisma/prisma";
 import { fileUpload } from "../../utils/fileUpload";
-import { getIO } from "../../utils/socket";
 import ApiError from "../../errors/apiError";
 import { PrismaQueryBuilder } from "../../utils/QueryBuilder";
 
@@ -52,10 +51,6 @@ const createUser = async (req: Request) => {
     },
   });
 
-  getIO().emit("user-registered", {
-    message: "New user registered",
-    data: user,
-  });
 
   return user;
 };
@@ -104,10 +99,7 @@ const findOrCreateGoogleUser = async (profile: {
     },
   });
 
-  getIO().emit("user-registered", {
-    message: "New Google user registered",
-    data: user,
-  });
+ 
 
   return user;
 };

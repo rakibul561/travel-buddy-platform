@@ -68,6 +68,7 @@ model User {
   visitedCountries   String[]         @default([])
 
   isVerified         Boolean          @default(false)
+  verifiedAt         DateTime?   
   subscriptionPlan   SubscriptionPlan @default(FREE)
   subscriptionEndsAt DateTime?
 
@@ -141,9 +142,6 @@ model JoinRequest {
   @@index([travelPlanId])
 }
 
-/* =======================
-      TRIP PARTICIPANT
-======================= */
 
 model TripParticipant {
   id            String      @id @default(uuid())
@@ -158,9 +156,6 @@ model TripParticipant {
   @@index([userId])
 }
 
-/* =======================
-           REVIEW
-======================= */
 
 model Review {
   id            String   @id @default(uuid())
@@ -182,9 +177,6 @@ model Review {
   @@index([travelPlanId])
 }
 
-/* =======================
-           PAYMENT
-======================= */
 
 model Payment {
   id            String   @id @default(uuid())

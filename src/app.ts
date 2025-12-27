@@ -8,18 +8,19 @@ import notFound from "./app/middlewares/notFound";
 import router from "./app/routes";
 import config from "./app/config";
 import morgan from 'morgan'
-import { stripeWebhook } from "./app/modules/payment/payment.webhook";
+import { stripeWebhookHandler } from "./app/modules/payment/payment.webhook";
 
 const app: Application = express();
-import bodyParser from "body-parser";
 
 
 // Webhook must be before other middleware
 app.post(
   "/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  stripeWebhook
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler
 );
+
+
 
 
 app.use(cors({

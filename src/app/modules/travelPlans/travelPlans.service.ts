@@ -195,7 +195,7 @@ const matchTravelers = async (query: MatchQuery & { userId: string }) => {
         select: {
           id: true,
           name: true,
-          profilePicture: true, // ✅ email বাদ
+          profilePicture: true, 
         },
       },
     },

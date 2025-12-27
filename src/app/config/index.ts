@@ -29,11 +29,11 @@ export default {
 
     stripe: {
         stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-        stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY,
-        stripeWebHookSecret: process.env.STRIPE_WEBHOOK_SECRET, // ✅ Fixed: was STRIPE_WEBHOOKS_SECRET
+        
+        stripeWebHookSecret: process.env.STRIPE_WEBHOOK_SECRET, 
         frontendUrl: process.env.FRONTEND_URL,
-        monthlyPriceId: process.env.STRIPE_MONTHLY_PRICE_ID, // ✅ Fixed: was missing
-        yearlyPriceId: process.env.STRIPE_YEARLY_PRICE_ID      // ✅ Fixed: was missing
+        monthlyPriceId: process.env.STRIPE_MONTHLY_PRICE_ID, 
+        yearlyPriceId: process.env.STRIPE_YEARLY_PRICE_ID      
     },
 
     username: process.env.REDIS_USERNAME,

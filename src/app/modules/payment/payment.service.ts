@@ -1,77 +1,121 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import httpStatus from "http-status";
-import { stripe } from "../../utils/stripe";
-import { PRICE_MAP } from "./payment.constant";
-import ApiError from "../../errors/apiError";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import Stripe from "stripe";
+import config from "../../config";
 import { prisma } from "../../prisma/prisma";
+import { stripe } from "../../utils/stripe";
+import { SubscriptionPlan } from "@prisma/client";
 
-/**
- * SUBSCRIPTION CHECKOUT
- */
-const createSubscriptionCheckout = async (plan: "MONTHLY" | "YEARLY",decodedUser:any) => {
+const PRICE_MAP = {
+  MONTHLY: config.stripe.monthlyPriceId,
+  YEARLY: config.stripe.yearlyPriceId,
+};
+
+ const createSubscriptionCheckout = async (userId: string,plan: "MONTHLY" | "YEARLY") => {
+
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
   
-    
+
+  if (!user) throw new Error("User not found");
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer_email: decodedUser.email,
+    payment_method_types: ["card"],
+    customer_email: user.email,
 
     line_items: [
-      { price: PRICE_MAP[plan], quantity: 1 }
+      {
+        price: PRICE_MAP[plan],
+        quantity: 1,
+      },
     ],
+
+    success_url: `${config.stripe.frontendUrl}/payment/success`,
+    cancel_url: `${config.stripe.frontendUrl}/payment/cancel`,
+
     metadata: {
-      userId: decodedUser.userId,
+      userId: user.id,
       plan,
     },
-
-    success_url: "http://localhost:3000/success",
-    cancel_url: "http://localhost:3000/cancel",
   });
-    
-  console.log(session)
-  
+
   return session.url;
 };
 
 
+// payment.service.ts - handleStripeWebhookEvent function
 
-/**
- * VERIFIED BADGE (AFTER SUBSCRIPTION)
- */
-const purchaseVerifiedBadge = async (user: any) => {
-  if (user.subscriptionPlan === "FREE") {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      "Subscription required"
-    );
+const handleStripeWebhookEvent = async (event: Stripe.Event) => {
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      const userId = session.metadata?.userId;
+      const plan = session.metadata?.plan as "MONTHLY" | "YEARLY";
+
+      if (!userId || !plan) {
+        console.warn("⚠️ Missing metadata");
+        return;
+      }
+
+      const existing = await prisma.payment.findUnique({
+        where: { transactionId: session.id },
+      });
+
+      if (!existing) {
+        await prisma.payment.create({
+          data: {
+            userId,
+            transactionId: session.id,
+            amount: (session.amount_total ?? 0) / 100,
+            currency: session.currency ?? "USD",
+            plan,
+            status: "PAID",
+          },
+        });
+      }
+
+      // ✅ Update subscription AND verify user
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          subscriptionPlan: plan,
+          subscriptionEndsAt:
+            plan === "MONTHLY"
+              ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          // ✅ Verified badge
+          isVerified: true,
+          verifiedAt: new Date(),
+        },
+      });
+
+      console.log(`✅ User ${userId} subscribed to ${plan} and verified!`);
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      
+      
+      console.log(`✅ Subscription cancelled: ${subscription.id}`);
+      
+      // TODO: Remove verified badge when subscription ends
+      break;
+    }
+
+    default:
+      console.log(`ℹ️ Ignored Stripe event: ${event.type}`);
   }
-
-  if (user.isVerified) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Already verified"
-    );
-  }
-
-  await prisma.payment.create({
-    data: {
-      userId: user.id,
-      amount: 10,
-      currency: "USD",
-      status: "SUCCESS",
-      transactionId: `badge_${Date.now()}`,
-      plan: user.subscriptionPlan,
-    },
-  });
-
-  return prisma.user.update({
-    where: { id: user.id },
-    data: { isVerified: true },
-  });
 };
+
+
+
 
 export const PaymentService = {
   createSubscriptionCheckout,
-  purchaseVerifiedBadge,
+  handleStripeWebhookEvent
 };
