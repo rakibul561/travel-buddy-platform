@@ -93,7 +93,7 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
         },
       });
 
-      console.log(`✅ User ${userId} subscribed to ${plan} and verified!`);
+     
       break;
     }
 
@@ -101,14 +101,14 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
       const subscription = event.data.object as Stripe.Subscription;
       
       
-      console.log(`✅ Subscription cancelled: ${subscription.id}`);
+   
       
       // TODO: Remove verified badge when subscription ends
       break;
     }
 
     default:
-      console.log(`ℹ️ Ignored Stripe event: ${event.type}`);
+      
   }
 };
 

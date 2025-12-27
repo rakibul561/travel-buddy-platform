@@ -5,7 +5,7 @@ import ApiError from "../../errors/apiError";
 
 const sendJoinRequest = async (userId: string, travelPlanId: string) => {
    
-    console.log(userId, travelPlanId)
+
   const travelPlan = await prisma.travelPlan.findUnique({
     where: { id: travelPlanId },
   });
