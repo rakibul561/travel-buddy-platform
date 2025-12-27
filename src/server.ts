@@ -8,6 +8,7 @@ import app from "./app";
 import config from "./app/config";
 import { connectRedis } from "./app/config/redis.config";
 import { prisma } from "./app/prisma/prisma";
+import { seedAdmin } from "./app/utils/seedAdmin";
 
 
  async function connectDb() {
@@ -58,4 +59,7 @@ async function bootstrap() {
     }
 }
 
-bootstrap();
+(async () => {
+  await bootstrap();
+  await seedAdmin();
+})();

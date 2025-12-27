@@ -13,6 +13,11 @@ export default {
         refreshToken: process.env.JWT_REFRESH_SECRET
     },
 
+    admin : {
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD
+    },
+
     cloudinary: {
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
