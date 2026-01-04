@@ -12,18 +12,17 @@ const login = catchAsync(async (req: Request, res: Response) => {
   // ✅ Set cookies
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 1000 * 60 * 60, 
+    maxAge: 1000 * 60 * 60,
   });
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 1000 * 60 * 60 * 24 * 90, 
+    maxAge: 1000 * 60 * 60 * 24 * 90,
   });
-
 
   sendResponse(res, {
     statusCode: 201,

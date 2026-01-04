@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
+import ApiError from "../../errors/apiError";
 import catchAsync from "../../utils/catchAsync";
+import { fileUpload } from "../../utils/fileUpload";
 import sendResponse from "../../utils/sendResponse";
 import { TravelPlanService } from "./travelPlans.service";
-import { fileUpload } from "../../utils/fileUpload";
-import ApiError from "../../errors/apiError";
-
-
 
 const createTravelPlan = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
@@ -25,10 +23,7 @@ const createTravelPlan = catchAsync(async (req: Request, res: Response) => {
     image,
   };
 
-  const travelPlan = await TravelPlanService.createTravelPlan(
-    userId,
-    payload
-  );
+  const travelPlan = await TravelPlanService.createTravelPlan(userId, payload);
 
   sendResponse(res, {
     statusCode: 201,
@@ -38,11 +33,44 @@ const createTravelPlan = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSingleTravelPlan = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
+  const result = await TravelPlanService.getSingleTravelPlan(id);
 
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Travel plan retrieved successfully",
+    data: result,
+  });
+});
+
+/* ================= GET MY TRAVEL ================= */
+
+const getMyTravelPlans = catchAsync(async (req: Request, res: Response) => {
+  const decodedUser = req.user as any;
+
+  const query = req.query;
+
+  if (!decodedUser) {
+    throw new ApiError(200, "decodedUser is not found");
+  }
+
+  const result = await TravelPlanService.getMyTravelPlans(
+    decodedUser.userId,
+    query
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "My travel plans retrieved successfully",
+    data: result.data,
+  });
+});
 
 /* ================= GET ALL ================= */
-
 const getAllTravelPlans = catchAsync(async (req: Request, res: Response) => {
   const result = await TravelPlanService.getAllTravelPlans(req.query);
 
@@ -53,7 +81,6 @@ const getAllTravelPlans = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-
 
 /* ================= GET BY ID ================= */
 
@@ -106,7 +133,6 @@ const deleteTravelPlan = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const matchTravelers = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
 
@@ -118,12 +144,8 @@ const matchTravelers = catchAsync(async (req: Request, res: Response) => {
     destination: req.query.destination as string,
     startDate: new Date(req.query.startDate as string),
     endDate: new Date(req.query.endDate as string),
-    minBudget: req.query.minBudget
-      ? Number(req.query.minBudget)
-      : undefined,
-    maxBudget: req.query.maxBudget
-      ? Number(req.query.maxBudget)
-      : undefined,
+    minBudget: req.query.minBudget ? Number(req.query.minBudget) : undefined,
+    maxBudget: req.query.maxBudget ? Number(req.query.maxBudget) : undefined,
     flexDays: req.query.flexDays ? Number(req.query.flexDays) : 3,
     userId,
   };
@@ -137,7 +159,6 @@ const matchTravelers = catchAsync(async (req: Request, res: Response) => {
     data: matches,
   });
 });
-
 
 const completeTrip = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
@@ -153,10 +174,6 @@ const completeTrip = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
-
-
-
 export const TravelPlansController = {
   createTravelPlan,
   getAllTravelPlans,
@@ -164,5 +181,7 @@ export const TravelPlansController = {
   updateTravelPlan,
   deleteTravelPlan,
   matchTravelers,
-  completeTrip
+  completeTrip,
+  getMyTravelPlans,
+  getSingleTravelPlan,
 };

@@ -8,12 +8,7 @@ const sendJoinRequest = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
   const { travelPlanId } = req.body;
 
-
-
-  const result = await JoinRequestService.sendJoinRequest(
-    userId,
-    travelPlanId
-  );
+  const result = await JoinRequestService.sendJoinRequest(userId, travelPlanId);
 
   sendResponse(res, {
     statusCode: 201,
@@ -23,37 +18,41 @@ const sendJoinRequest = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getRequestsForMyTrips = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as any).userId;
+const getRequestsForMyTrips = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).userId;
 
-  const result = await JoinRequestService.getRequestsForMyTrips(userId);
+    const result = await JoinRequestService.getRequestsForMyTrips(userId);
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Join requests retrieved",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Join requests retrieved",
+      data: result,
+    });
+  }
+);
 
-const updateJoinRequestStatus = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as any).userId;
-  const { id } = req.params;
-  const { status } = req.body; // ACCEPTED | REJECTED
+const updateJoinRequestStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).userId;
+    const { id } = req.params;
+    const { status } = req.body; // ACCEPTED | REJECTED
 
-  const result = await JoinRequestService.updateJoinRequestStatus(
-    userId,
-    id,
-    status
-  );
+    const result = await JoinRequestService.updateJoinRequestStatus(
+      userId,
+      id,
+      status
+    );
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: `Join request ${status}`,
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: `Join request ${status}`,
+      data: result,
+    });
+  }
+);
 
 export const JoinRequestController = {
   sendJoinRequest,

@@ -7,10 +7,12 @@ export default {
     node_env: process.env.NODE_ENV,
     port: process.env.PORT,
     database_url: process.env.DATABASE_URL,
+    
 
     jwt: {
         accessToken: process.env.JWT_ACCESS_SECRET,
         refreshToken: process.env.JWT_REFRESH_SECRET
+        
     },
 
     admin : {
@@ -43,6 +45,7 @@ export default {
 
     username: process.env.REDIS_USERNAME,
     password: process.env.REDIS_PASSWORD,
+    
     
     socket: {
         host: process.env.REDIS_HOST,

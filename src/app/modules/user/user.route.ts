@@ -1,10 +1,10 @@
+import { Role } from "@prisma/client";
 import express, { NextFunction, Request, Response } from "express";
 import passport from "../../config/passport.config";
-import { UserController } from "./user.controller";
-import { fileUpload } from "../../utils/fileUpload";
-import { userValidation } from "./user.validation";
 import auth from "../../middlewares/auth";
-import { Role } from "@prisma/client";
+import { fileUpload } from "../../utils/fileUpload";
+import { UserController } from "./user.controller";
+import { userValidation } from "./user.validation";
 
 const router = express.Router();
 
@@ -14,6 +14,7 @@ router.get(
   "/auth/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
+    prompt: "select_account",
   })
 );
 
@@ -30,7 +31,6 @@ router.get(
   }
 );
 
-
 router.post(
   "/register",
   fileUpload.upload.single("file"),
@@ -46,12 +46,7 @@ router.post(
   }
 );
 
-router.get(
-  "/me",
-  auth(Role.USER, Role.ADMIN),
-  UserController.getCurrentUser
-);
-
+router.get("/me", auth(Role.USER, Role.ADMIN), UserController.getCurrentUser);
 
 // profile Update
 router.patch(
@@ -70,23 +65,10 @@ router.patch(
   }
 );
 
+router.get("/", auth(Role.ADMIN), UserController.getAllUsers);
 
-router.get(
-  "/",
-  auth(Role.ADMIN),
-  UserController.getAllUsers
-);
+router.get("/:id", auth(Role.ADMIN), UserController.getUserById);
 
-router.get(
-  "/:id",
-  auth(Role.ADMIN),
-  UserController.getUserById
-);
-
-router.delete(
-  "/:id",
-  auth(Role.ADMIN),
-  UserController.deleteUser
-);
+router.delete("/:id", auth(Role.ADMIN), UserController.deleteUser);
 
 export const UserRoutes = router;

@@ -1,11 +1,8 @@
-
 import httpStatus from "http-status";
-import { prisma } from "../../prisma/prisma";
 import ApiError from "../../errors/apiError";
+import { prisma } from "../../prisma/prisma";
 
 const sendJoinRequest = async (userId: string, travelPlanId: string) => {
-   
-
   const travelPlan = await prisma.travelPlan.findUnique({
     where: { id: travelPlanId },
   });

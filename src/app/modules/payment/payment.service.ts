@@ -3,21 +3,19 @@ import Stripe from "stripe";
 import config from "../../config";
 import { prisma } from "../../prisma/prisma";
 import { stripe } from "../../utils/stripe";
-import { SubscriptionPlan } from "@prisma/client";
 
 const PRICE_MAP = {
   MONTHLY: config.stripe.monthlyPriceId,
   YEARLY: config.stripe.yearlyPriceId,
 };
 
- const createSubscriptionCheckout = async (userId: string,plan: "MONTHLY" | "YEARLY") => {
-
-
+const createSubscriptionCheckout = async (
+  userId: string,
+  plan: "MONTHLY" | "YEARLY"
+) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
-
-  
 
   if (!user) throw new Error("User not found");
 
@@ -45,8 +43,40 @@ const PRICE_MAP = {
   return session.url;
 };
 
+const getAllPayments = async (page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
 
-// payment.service.ts - handleStripeWebhookEvent function
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isVerified: true,
+          },
+        },
+      },
+    }),
+    prisma.payment.count(),
+  ]);
+
+  return {
+    data: payments,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
 
 const handleStripeWebhookEvent = async (event: Stripe.Event) => {
   switch (event.type) {
@@ -93,29 +123,23 @@ const handleStripeWebhookEvent = async (event: Stripe.Event) => {
         },
       });
 
-     
       break;
     }
 
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription;
-      
-      
-   
-      
+
       // TODO: Remove verified badge when subscription ends
       break;
     }
 
     default:
-      
   }
 };
 
-
-
-
 export const PaymentService = {
   createSubscriptionCheckout,
-  handleStripeWebhookEvent
+  getAllPayments,
+
+  handleStripeWebhookEvent,
 };

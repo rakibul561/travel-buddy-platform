@@ -2,14 +2,10 @@
 import {
   CreateTravelPlanDTO,
   MatchQuery,
-
   UpdateTravelPlanDTO,
 } from "../../../types/travelPlan.types";
 import ApiError from "../../errors/apiError";
-import { PrismaQueryBuilder } from "../../utils/QueryBuilder";
 import { prisma } from "../../prisma/prisma";
-
-
 
 /* ================= CREATE ================= */
 
@@ -43,24 +39,138 @@ const createTravelPlan = async (
   });
 };
 
+interface PaginationQuery {
+  page?: string;
+  limit?: string;
+}
+
+const getMyTravelPlans = async (userId: string, query: PaginationQuery) => {
+  // pagination calculation
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  // where condition (query builder style)
+  const whereCondition = {
+    userId,
+  };
+
+  // main data
+  const data = await prisma.travelPlan.findMany({
+    where: whereCondition,
+    skip,
+    take: limit,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  // total count
+  const total = await prisma.travelPlan.count({
+    where: whereCondition,
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+      totalPage: Math.ceil(total / limit),
+    },
+    data,
+  };
+};
+
+const getSingleTravelPlan = async (travelPlanId: string) => {
+  const result = await prisma.travelPlan.findUnique({
+    where: {
+      id: travelPlanId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!result) {
+    throw new ApiError(404, "Travel plan not found");
+  }
+
+  return result;
+};
 
 /* ================= GET ALL ================= */
 
 const getAllTravelPlans = async (query: Record<string, any>) => {
-  const qb = new PrismaQueryBuilder(query)
-    .filter()
-    .search(["destination"])
-    .sort()
-    .paginate(); 
+  const { search, travelType, page = 1, limit = 10, sortBy, sortOrder } = query;
 
-  const prismaQuery = qb.build();
+  // Build where condition
+  const whereCondition: any = {
+    isActive: true, // শুধু active travel plans দেখাবে
+  };
 
+  // Search logic - destination, city, country তে search করবে
+  if (search && search.trim()) {
+    whereCondition.OR = [
+      {
+        destination: {
+          contains: search,
+          mode: "insensitive", // case-insensitive search
+        },
+      },
+      {
+        city: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+      {
+        country: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
+  // Filter by travel type
+  if (travelType && travelType !== "ALL") {
+    whereCondition.travelType = travelType;
+  }
+
+  // Pagination
+  const skip = (Number(page) - 1) * Number(limit);
+  const take = Number(limit);
+
+  // Sorting
+  const orderBy: any = {};
+  if (sortBy) {
+    orderBy[sortBy] = sortOrder || "desc";
+  } else {
+    orderBy.createdAt = "desc"; // default sorting
+  }
+
+  // Execute queries
   const [data, total] = await Promise.all([
     prisma.travelPlan.findMany({
-      where: prismaQuery.where,
-      orderBy: prismaQuery.orderBy,
-      skip: prismaQuery.skip,
-      take: prismaQuery.take,
+      where: whereCondition,
+      orderBy: orderBy,
+      skip: skip,
+      take: take,
       include: {
         user: {
           select: {
@@ -71,11 +181,19 @@ const getAllTravelPlans = async (query: Record<string, any>) => {
         },
       },
     }),
-    prisma.travelPlan.count({ where: prismaQuery.where }),
+    prisma.travelPlan.count({ where: whereCondition }),
   ]);
 
+  // Calculate meta
+  const totalPage = Math.ceil(total / take);
+
   return {
-    meta: qb.getMeta(total),
+    meta: {
+      page: Number(page),
+      limit: take,
+      total: total,
+      totalPage: totalPage,
+    },
     data,
   };
 };
@@ -195,7 +313,7 @@ const matchTravelers = async (query: MatchQuery & { userId: string }) => {
         select: {
           id: true,
           name: true,
-          profilePicture: true, 
+          profilePicture: true,
         },
       },
     },
@@ -225,7 +343,6 @@ const completeTrip = async (userId: string, tripId: string) => {
   });
 };
 
-
 export const TravelPlanService = {
   createTravelPlan,
   getAllTravelPlans,
@@ -233,5 +350,7 @@ export const TravelPlanService = {
   updateTravelPlan,
   deleteTravelPlan,
   matchTravelers,
-  completeTrip
+  completeTrip,
+  getMyTravelPlans,
+  getSingleTravelPlan,
 };
