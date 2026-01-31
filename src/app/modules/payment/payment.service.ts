@@ -11,7 +11,7 @@ const PRICE_MAP = {
 
 const createSubscriptionCheckout = async (
   userId: string,
-  plan: "MONTHLY" | "YEARLY"
+  plan: "MONTHLY" | "YEARLY",
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -23,14 +23,12 @@ const createSubscriptionCheckout = async (
     mode: "subscription",
     payment_method_types: ["card"],
     customer_email: user.email,
-
     line_items: [
       {
         price: PRICE_MAP[plan],
         quantity: 1,
       },
     ],
-
     success_url: `${config.stripe.frontendUrl}/payment/success`,
     cancel_url: `${config.stripe.frontendUrl}/payment/cancel`,
 

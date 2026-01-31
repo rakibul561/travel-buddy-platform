@@ -3,12 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
-/* =======================
-          ENUMS
-======================= */
+// =======================
+//           ENUMS
+// =======================
 
 enum Role {
   USER
@@ -44,12 +45,12 @@ enum TravelPlanStatus {
   COMPLETED
 }
 
-/* =======================
-          MODELS
-======================= */
+// =======================
+//           MODELS
+// =======================
 
 model User {
-  id                 String   @id @default(uuid())
+  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
   email              String   @unique
   name               String
   fullName           String?
@@ -72,7 +73,7 @@ model User {
   subscriptionPlan   SubscriptionPlan @default(FREE)
   subscriptionEndsAt DateTime?
 
-  /* Relations */
+  // Relations
   travelPlans        TravelPlan[]
   joinRequests       JoinRequest[]    @relation("UserJoinRequests")
   tripParticipants   TripParticipant[]
@@ -83,16 +84,16 @@ model User {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  @@index([email])
+
 }
 
-/* =======================
-        TRAVEL PLAN
-======================= */
+// =======================
+//         TRAVEL PLAN
+// =======================
 
 model TravelPlan {
-  id              String           @id @default(uuid())
-  userId          String
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String           @db.ObjectId
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   destination     String
@@ -112,7 +113,7 @@ model TravelPlan {
   status          TravelPlanStatus  @default(PLANNED)
   isActive        Boolean           @default(true)
 
-  /* Relations */
+  // Relations
   joinRequests    JoinRequest[]
   participants    TripParticipant[]
   reviews         Review[]
@@ -124,14 +125,14 @@ model TravelPlan {
   @@index([destination, startDate])
 }
 
-/* =======================
-        JOIN REQUEST
-======================= */
+// =======================
+//         JOIN REQUEST
+// =======================
 
 model JoinRequest {
-  id            String            @id @default(uuid())
-  travelPlanId  String
-  requesterId   String
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  travelPlanId  String            @db.ObjectId
+  requesterId   String            @db.ObjectId
   status        JoinRequestStatus @default(PENDING)
   createdAt     DateTime          @default(now())
 
@@ -144,9 +145,9 @@ model JoinRequest {
 
 
 model TripParticipant {
-  id            String      @id @default(uuid())
-  travelPlanId  String
-  userId        String
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  travelPlanId  String      @db.ObjectId
+  userId        String      @db.ObjectId
   joinedAt      DateTime    @default(now())
 
   travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
@@ -158,10 +159,10 @@ model TripParticipant {
 
 
 model Review {
-  id            String   @id @default(uuid())
-  reviewerId    String
-  reviewedId    String
-  travelPlanId  String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  reviewerId    String   @db.ObjectId
+  reviewedId    String   @db.ObjectId
+  travelPlanId  String   @db.ObjectId
 
   rating        Int
   comment       String
@@ -179,8 +180,8 @@ model Review {
 
 
 model Payment {
-  id            String   @id @default(uuid())
-  userId        String
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount        Float

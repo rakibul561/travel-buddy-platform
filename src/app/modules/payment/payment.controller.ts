@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 
 import catchAsync from "../../utils/catchAsync";
 import { PaymentService } from "./payment.service";
+
 export const createCheckout = catchAsync(
   async (req: Request, res: Response) => {
     const { plan } = req.body;

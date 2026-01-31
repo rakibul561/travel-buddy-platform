@@ -1,12 +1,8 @@
+import express from "express";
+import { AuthController } from "./auth.controller";
+const router = express.Router();
 
-import express from 'express'
-import { AuthController } from './auth.controller'
-import { authRateLimiter } from '../../middlewares/authRateLimiter'
-const router = express.Router()
+router.post("/login", AuthController.login);
+router.post("/logout", AuthController.logout);
 
-router.post("/login",authRateLimiter,AuthController.login)
-router.post("/logout",AuthController.logout)
-
-
-
-export const AuthRoutes = router
+export const AuthRoutes = router;

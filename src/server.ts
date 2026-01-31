@@ -11,14 +11,14 @@ import { prisma } from "./app/prisma/prisma";
 import { seedAdmin } from "./app/utils/seedAdmin";
 
 
- async function connectDb() {
-  try {
-    await prisma.$connect();
-    console.log("*** Database connected successfully!!");
-  } catch (error) {
-    console.log("*** Database connection failed!!", error);
-    process.exit(1);
-  }
+async function connectDb() {
+    try {
+        await prisma.$connect();
+        console.log("*** Database connected successfully!!");
+    } catch (error) {
+        console.log("*** Database connection failed!!", error);
+        process.exit(1);
+    }
 }
 
 async function bootstrap() {
@@ -60,6 +60,10 @@ async function bootstrap() {
 }
 
 (async () => {
-  await bootstrap();
-  await seedAdmin();
+    await bootstrap();
+    try {
+        await seedAdmin();
+    } catch (error) {
+        console.log("Failed to seed admin user (this is expected if running on standalone MongoDB without replica set):", error);
+    }
 })();

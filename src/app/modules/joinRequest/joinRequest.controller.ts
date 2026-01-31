@@ -30,19 +30,19 @@ const getRequestsForMyTrips = catchAsync(
       message: "Join requests retrieved",
       data: result,
     });
-  }
+  },
 );
 
 const updateJoinRequestStatus = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req.user as any).userId;
     const { id } = req.params;
-    const { status } = req.body; // ACCEPTED | REJECTED
+    const { status } = req.body;
 
     const result = await JoinRequestService.updateJoinRequestStatus(
       userId,
       id,
-      status
+      status,
     );
 
     sendResponse(res, {
@@ -51,7 +51,7 @@ const updateJoinRequestStatus = catchAsync(
       message: `Join request ${status}`,
       data: result,
     });
-  }
+  },
 );
 
 export const JoinRequestController = {

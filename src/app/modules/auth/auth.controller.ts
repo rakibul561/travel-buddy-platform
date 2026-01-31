@@ -28,7 +28,7 @@ const login = catchAsync(async (req: Request, res: Response) => {
     statusCode: 201,
     success: true,
     message: result.message,
-    data: null,
+    data: result,
   });
 });
 
