@@ -50,41 +50,43 @@ enum TravelPlanStatus {
 // =======================
 
 model User {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  email              String   @unique
-  name               String
-  fullName           String?
-  password           String
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  email    String  @unique
+  name     String
+  fullName String?
+  password String
 
-  role               Role            @default(USER)
-  authProvider       AuthProvider    @default(LOCAL)
-  googleId           String?          @unique
+  role         Role         @default(USER)
+  authProvider AuthProvider @default(LOCAL)
+  googleId     String?      @unique
 
-  profilePicture     String?
-  profileImage       String?
-  bio                String?
-  currentLocation    String?
+  profilePicture  String?
+  profileImage    String?
+  bio             String?
+  currentLocation String?
 
-  travelInterests    String[]         @default([])
-  visitedCountries   String[]         @default([])
+  travelInterests  String[] @default([])
+  visitedCountries String[] @default([])
 
   isVerified         Boolean          @default(false)
-  verifiedAt         DateTime?   
+  verifiedAt         DateTime?
   subscriptionPlan   SubscriptionPlan @default(FREE)
   subscriptionEndsAt DateTime?
 
   // Relations
-  travelPlans        TravelPlan[]
-  joinRequests       JoinRequest[]    @relation("UserJoinRequests")
-  tripParticipants   TripParticipant[]
-  reviewsGiven       Review[]         @relation("ReviewsGiven")
-  reviewsReceived    Review[]         @relation("ReviewsReceived")
-  payments           Payment[]
+  travelPlans      TravelPlan[]
+  joinRequests     JoinRequest[]     @relation("UserJoinRequests")
+  tripParticipants TripParticipant[]
+  reviewsGiven     Review[]          @relation("ReviewsGiven")
+  reviewsReceived  Review[]          @relation("ReviewsReceived")
+  payments         Payment[]
 
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Follower")
+  follows   Follow[]
 }
 
 // =======================
@@ -92,34 +94,34 @@ model User {
 // =======================
 
 model TravelPlan {
-  id              String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String           @db.ObjectId
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  destination     String
-  country         String
-  city            String?
-  image           String?
-  startDate       DateTime
-  endDate         DateTime
+  destination String
+  country     String
+  city        String?
+  image       String?
+  startDate   DateTime
+  endDate     DateTime
 
-  budgetMin       Float?
-  budgetMax       Float?
-  travelType      TravelType
+  budgetMin  Float?
+  budgetMax  Float?
+  travelType TravelType
 
-  description     String?
-  itinerary       String?
+  description String?
+  itinerary   String?
 
-  status          TravelPlanStatus  @default(PLANNED)
-  isActive        Boolean           @default(true)
+  status   TravelPlanStatus @default(PLANNED)
+  isActive Boolean          @default(true)
 
   // Relations
-  joinRequests    JoinRequest[]
-  participants    TripParticipant[]
-  reviews         Review[]
+  joinRequests JoinRequest[]
+  participants TripParticipant[]
+  reviews      Review[]
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([destination, startDate])
@@ -130,67 +132,80 @@ model TravelPlan {
 // =======================
 
 model JoinRequest {
-  id            String            @id @default(auto()) @map("_id") @db.ObjectId
-  travelPlanId  String            @db.ObjectId
-  requesterId   String            @db.ObjectId
-  status        JoinRequestStatus @default(PENDING)
-  createdAt     DateTime          @default(now())
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
+  travelPlanId String            @db.ObjectId
+  requesterId  String            @db.ObjectId
+  status       JoinRequestStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
 
-  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
-  requester     User       @relation("UserJoinRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  requester  User       @relation("UserJoinRequests", fields: [requesterId], references: [id], onDelete: Cascade)
 
   @@unique([travelPlanId, requesterId])
   @@index([travelPlanId])
 }
 
-
 model TripParticipant {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  travelPlanId  String      @db.ObjectId
-  userId        String      @db.ObjectId
-  joinedAt      DateTime    @default(now())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  travelPlanId String   @db.ObjectId
+  userId       String   @db.ObjectId
+  joinedAt     DateTime @default(now())
 
-  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([travelPlanId, userId])
   @@index([userId])
 }
 
-
 model Review {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  reviewerId    String   @db.ObjectId
-  reviewedId    String   @db.ObjectId
-  travelPlanId  String   @db.ObjectId
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  reviewerId   String @db.ObjectId
+  reviewedId   String @db.ObjectId
+  travelPlanId String @db.ObjectId
 
-  rating        Int
-  comment       String
+  rating  Int
+  comment String
 
-  reviewer      User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewed      User       @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
-  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  reviewer   User       @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewed   User       @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([reviewerId, reviewedId, travelPlanId])
   @@index([travelPlanId])
 }
 
-
 model Payment {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String   @db.ObjectId
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount        Float
-  currency      String   @default("USD")
+  currency      String           @default("USD")
   status        String
-  transactionId String   @unique
+  transactionId String           @unique
   plan          SubscriptionPlan
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model Follow {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String @db.ObjectId
+  followingId String @db.ObjectId
+
+  follower  User @relation("Follower", fields: [followerId], references: [id])
+  following User @relation("Following", fields: [followingId], references: [id])
+
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?  @db.ObjectId
+
+  @@unique([followerId, followingId])
+  @@map("user_follows")
 }
