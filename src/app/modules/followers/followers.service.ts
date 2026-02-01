@@ -8,7 +8,7 @@ const getfollowers = async (userId: string) => {
         select: {
           id: true,
           fullName: true,
-          profileImage: true,
+          profilePicture: true,
         },
       },
     },
@@ -25,7 +25,7 @@ const getfollowing = async (userId: string) => {
         select: {
           id: true,
           fullName: true,
-          profileImage: true,
+          profilePicture: true,
         },
       },
     },
@@ -33,141 +33,97 @@ const getfollowing = async (userId: string) => {
 };
 
 const followUser = async (userId: string, targetUserId: string) => {
+  const existingFollow = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: userId,
+        followingId: targetUserId,
+      },
+    },
+  });
+
+  if (existingFollow) {
+    throw new Error("You are already following this user");
+  }
+
   return prisma.follow.create({
     data: {
-      userId: userId,
       followerId: userId,
       followingId: targetUserId,
     },
   });
 };
 
-/* ================= FRIEND PROFILE ================= */
-// const getFriendProfile = async (
-//   targetUserId: string,
-//   currentUserId: string,
-// ) => {
-//   /* -------- BASIC USER INFO -------- */
-//   const user = await prisma.user.findUnique({
-//     where: { id: targetUserId },
-//     select: {
+const unfollowUser = async (userId: string, targetUserId: string) => {
+  const existingFollow = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: userId,
+        followingId: targetUserId,
+      },
+    },
+  });
 
-//       subscription: {
-//         select: { status: true },
-//       },
-//     },
-//   });
+  if (!existingFollow) {
+    throw new Error("You are not following this user");
+  }
 
-//   if (!user) {
-//     throw new Error("User not found");
-//   }
+  return prisma.follow.delete({
+    where: {
+      id: existingFollow.id,
+    },
+  });
+};
 
-//   /* -------- follow STATUS -------- */
-//   const isfollowing = await prisma.follow.findFirst({
-//     where: {
-//       followerId: currentUserId,
-//       followingId: targetUserId,
-//     },
-//   });
+const getUserProfile = async (targetUserId: string, currentUserId: string) => {
+  // user exists কিনা
+  const user = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profilePicture: true,
+      createdAt: true,
+    },
+  });
 
-//   /* -------- WEEKLY XP (FROM userProgress) -------- */
-//   const today = new Date();
-//   today.setHours(23, 59, 59, 999);
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-//   const fromDate = new Date();
-//   fromDate.setDate(today.getDate() - 6);
-//   fromDate.setHours(0, 0, 0, 0);
+  // followers count
+  const followersCount = await prisma.follow.count({
+    where: { followingId: targetUserId },
+  });
 
-//   const progresses = await prisma.userProgress.findMany({
-//     where: {
-//       userId: targetUserId,
-//       status: "COMPLETED",
-//       completedAt: {
-//         gte: fromDate,
-//         lte: today,
-//       },
-//     },
-//     select: {
-//       completedAt: true,
-//       metadata: true,
-//     },
-//   });
+  // following count
+  const followingCount = await prisma.follow.count({
+    where: { followerId: targetUserId },
+  });
 
-//   const pointsMap: Record<string, number> = {};
+  // current user follow করছে কিনা
+  const isFollowing = await prisma.follow.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: currentUserId,
+        followingId: targetUserId,
+      },
+    },
+  });
 
-//   for (const p of progresses) {
-//     const meta = p.metadata as { totalPoints?: number } | null;
-//     const points = meta?.totalPoints ?? 0;
-
-//     const dateKey = p.completedAt.toISOString().split("T")[0];
-//     pointsMap[dateKey] = (pointsMap[dateKey] || 0) + points;
-//   }
-
-//   const weeklyProgress = Array.from({ length: 7 }).map((_, i) => {
-//     const date = new Date(fromDate);
-//     date.setDate(fromDate.getDate() + i);
-
-//     const key = date.toISOString().split("T")[0];
-
-//     return {
-//       date: key,
-//       xp: pointsMap[key] || 0,
-//     };
-//   });
-
-//   /* -------- WEEKLY TOTAL XP -------- */
-//   const weeklyTotalXp = weeklyProgress.reduce((sum, day) => sum + day.xp, 0);
-
-//   /* -------- STREAK -------- */
-//   const streak = await prisma.dailyStreak.findUnique({
-//     where: { userId: targetUserId },
-//     select: { currentStreak: true },
-//   });
-
-//   /* -------- VOCABULARY -------- */
-//   const vocabularyCount = await prisma.dictionaryWord.count({
-//     where: { userId: targetUserId },
-//   });
-
-//   /* -------- CHAPTER PROGRESS -------- */
-//   const completed = await prisma.masteryProgress.count({
-//     where: {
-//       userId: targetUserId,
-//       completedLessons: { gt: 0 },
-//     },
-//   });
-
-//   const total = await prisma.masteryProgress.count({
-//     where: { userId: targetUserId },
-//   });
-
-//   /* -------- CLASS -------- */
-//   let userClass = "Bronze";
-//   if ((user.totalPoints || weeklyTotalXp) >= 500) userClass = "Silver";
-//   if ((user.totalPoints || weeklyTotalXp) >= 1500) userClass = "Gold";
-
-//   /* -------- FINAL RESPONSE -------- */
-//   return {
-//     user: {
-//       fullName: user.fullName,
-//       userName: user.userName,
-//       image: user.image,
-//       joinedAt: user.createdAt,
-//       isPremium: user.subscription?.status === "ACTIVE",
-//       isfollowing: !!isfollowing,
-//     },
-//     weeklyProgress,
-//     streak: streak?.currentStreak || 0,
-//     vocabularyCount,
-//     chapterProgress: `${completed}/${total}`,
-//     exp: user.totalPoints > 0 ? user.totalPoints : weeklyTotalXp,
-//     class: userClass,
-//   };
-// };
+  return {
+    user,
+    followersCount,
+    followingCount,
+    isFollowing: Boolean(isFollowing),
+  };
+};
 
 export const followerServices = {
   getfollowers,
   getfollowing,
   followUser,
-  // getFriendProfile,
+  getUserProfile,
+  unfollowUser,
 };

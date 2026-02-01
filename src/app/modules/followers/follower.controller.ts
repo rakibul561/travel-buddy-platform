@@ -50,9 +50,45 @@ const followUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+/* ================= UNFOLLOW USER ================= */
+const unfollowUser = catchAsync(async (req: Request, res: Response) => {
+  const decodedUser = req.user as any;
+  const { targetUserId } = req.params;
+
+  const result = await followerServices.unfollowUser(
+    decodedUser.userId,
+    targetUserId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User unfollowed successfully",
+    data: result,
+  });
+});
+
+const getUserProfile = catchAsync(async (req: Request, res: Response) => {
+  const decodedUser = req.user as any;
+  const { userId } = req.params;
+
+  const result = await followerServices.getUserProfile(
+    userId,
+    decodedUser.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User profile retrieved successfully",
+    data: result,
+  });
+});
+
 export const FollowerController = {
   getFollowers,
   getFollowing,
-
+  getUserProfile,
   followUser,
+  unfollowUser,
 };
