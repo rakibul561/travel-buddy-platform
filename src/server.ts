@@ -9,7 +9,7 @@ import config from "./app/config";
 import { connectRedis } from "./app/config/redis.config";
 import { prisma } from "./app/prisma/prisma";
 import { seedAdmin } from "./app/utils/seedAdmin";
-
+import { initializeSocket } from "./app/utils/socket";
 
 async function connectDb() {
     try {
@@ -27,7 +27,9 @@ async function bootstrap() {
         await connectRedis()
         await connectDb()
         server = http.createServer(app);
+
         // * Initialize Socket.IO
+        initializeSocket(server);
 
         server.listen(config.port, () => {
             console.log(`🚀 Server is running on http://localhost:${config.port}`);

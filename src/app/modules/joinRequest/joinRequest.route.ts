@@ -12,9 +12,15 @@ router.post(
 );
 
 router.get(
-  "/my-trips",
+  "/received-requests",
   auth(Role.USER, Role.ADMIN),
   JoinRequestController.getRequestsForMyTrips,
+);
+
+router.get(
+  "/my-requests",
+  auth(Role.USER, Role.ADMIN),
+  JoinRequestController.getMySentRequests,
 );
 
 router.patch(

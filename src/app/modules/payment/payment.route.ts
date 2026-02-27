@@ -5,7 +5,7 @@ import { createCheckout, PaymentController } from "./payment.controller";
 
 const router = Router();
 
-router.post("/subscription", auth(Role.USER), createCheckout);
+router.post("/subscription", auth(Role.USER, Role.ADMIN), createCheckout);
 router.get("/", auth(Role.ADMIN, Role.USER), PaymentController.getAllPayments);
 
 export const PaymentRoutes = router;

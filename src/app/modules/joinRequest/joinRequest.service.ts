@@ -41,6 +41,7 @@ const getRequestsForMyTrips = async (userId: string) => {
       travelPlan: {
         select: {
           destination: true,
+          image: true,
         },
       },
     },
@@ -83,8 +84,35 @@ const updateJoinRequestStatus = async (
   return updated;
 };
 
+const getMySentRequests = async (userId: string) => {
+  return prisma.joinRequest.findMany({
+    where: {
+      requesterId: userId,
+    },
+    include: {
+      travelPlan: {
+        include: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          profilePicture: true,
+        },
+      }
+    },
+  });
+};
+
 export const JoinRequestService = {
   sendJoinRequest,
   getRequestsForMyTrips,
   updateJoinRequestStatus,
+  getMySentRequests,
 };

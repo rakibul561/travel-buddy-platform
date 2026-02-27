@@ -8,9 +8,15 @@ import notFound from "./app/middlewares/notFound";
 import router from "./app/routes";
 import config from "./app/config";
 import morgan from "morgan";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
 import { stripeWebhookHandler } from "./app/modules/payment/payment.webhook";
+import { setupSwagger } from "./app/utils/swagger";
 
 const app: Application = express();
+
+// Initialize Swagger Docs
+setupSwagger(app);
 
 // Webhook must be before other middleware
 app.post(
@@ -29,6 +35,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Security Middlewares
+app.use(helmet());
+app.use(mongoSanitize());
 
 app.use(morgan("combined"));
 

@@ -26,7 +26,7 @@ router.get(
   }),
   (req: Request, res: Response) => {
     res.redirect(
-      `${process.env.FRONTEND_URL || "http://localhost:3000"}/dashboard`
+      `${process.env.FRONTEND_URL || "http://localhost:3000"}/`
     );
   }
 );

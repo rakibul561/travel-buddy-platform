@@ -11,7 +11,7 @@ const PRICE_MAP = {
 
 const createSubscriptionCheckout = async (
   userId: string,
-  plan: "MONTHLY" | "YEARLY",
+  plan: "MONTHLY" | "YEARLY" | "FREE",
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -19,13 +19,31 @@ const createSubscriptionCheckout = async (
 
   if (!user) throw new Error("User not found");
 
+  if (plan === "FREE") {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionPlan: "FREE",
+        isVerified: false,
+        subscriptionEndsAt: null,
+      },
+    });
+    return null; // Means no checkout URL needed
+  }
+
+  const priceId = PRICE_MAP[plan as "MONTHLY" | "YEARLY"];
+
+  if (!priceId) {
+    throw new Error("Invalid subscription plan or missing Stripe configuration.");
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     customer_email: user.email,
     line_items: [
       {
-        price: PRICE_MAP[plan],
+        price: priceId,
         quantity: 1,
       },
     ],

@@ -58,7 +58,7 @@ model User {
 
   role         Role         @default(USER)
   authProvider AuthProvider @default(LOCAL)
-  googleId     String?      @unique
+  googleId     String?
 
   profilePicture  String?
   profileImage    String?
@@ -80,6 +80,7 @@ model User {
   reviewsGiven     Review[]          @relation("ReviewsGiven")
   reviewsReceived  Review[]          @relation("ReviewsReceived")
   payments         Payment[]
+  messages         Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -118,6 +119,7 @@ model TravelPlan {
   joinRequests JoinRequest[]
   participants TripParticipant[]
   reviews      Review[]
+  messages     Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -205,4 +207,23 @@ model Follow {
 
   @@unique([followerId, followingId])
   @@map("user_follows")
+}
+
+// =======================
+//         MESSAGE
+// =======================
+
+model Message {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  travelPlanId String @db.ObjectId
+  senderId     String @db.ObjectId
+  senderName   String
+  message      String
+
+  travelPlan TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  sender     User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([travelPlanId])
 }

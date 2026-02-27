@@ -136,19 +136,17 @@ const deleteTravelPlan = catchAsync(async (req: Request, res: Response) => {
 const matchTravelers = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).userId;
 
-  if (!req.query.destination || !req.query.startDate || !req.query.endDate) {
-    throw new ApiError(400, "Destination and date range are required");
-  }
-
-  const query = {
-    destination: req.query.destination as string,
-    startDate: new Date(req.query.startDate as string),
-    endDate: new Date(req.query.endDate as string),
-    minBudget: req.query.minBudget ? Number(req.query.minBudget) : undefined,
-    maxBudget: req.query.maxBudget ? Number(req.query.maxBudget) : undefined,
-    flexDays: req.query.flexDays ? Number(req.query.flexDays) : 3,
+  const query: any = {
     userId,
+    flexDays: req.query.flexDays ? Number(req.query.flexDays) : 3,
   };
+
+  if (req.query.destination) query.destination = req.query.destination as string;
+  if (req.query.startDate) query.startDate = new Date(req.query.startDate as string);
+  if (req.query.endDate) query.endDate = new Date(req.query.endDate as string);
+  if (req.query.minBudget) query.minBudget = Number(req.query.minBudget);
+  if (req.query.maxBudget) query.maxBudget = Number(req.query.maxBudget);
+  if (req.query.travelType) query.travelType = req.query.travelType as string;
 
   const matches = await TravelPlanService.matchTravelers(query);
 

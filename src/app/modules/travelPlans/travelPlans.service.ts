@@ -6,6 +6,7 @@ import {
 } from "../../../types/travelPlan.types";
 import ApiError from "../../errors/apiError";
 import { prisma } from "../../prisma/prisma";
+import { redisClient } from "../../config/redis.config";
 
 /* ================= CREATE ================= */
 
@@ -118,6 +119,20 @@ const getSingleTravelPlan = async (travelPlanId: string) => {
 const getAllTravelPlans = async (query: Record<string, any>) => {
   const { search, travelType, page = 1, limit = 10, sortBy, sortOrder } = query;
 
+  // Cache Key Generation based on query parameters
+  const cacheKey = `travelPlans:${JSON.stringify(query)}`;
+
+  try {
+    if (redisClient.isOpen) {
+      const cachedData = await redisClient.get(cacheKey);
+      if (cachedData) {
+        return JSON.parse(cachedData);
+      }
+    }
+  } catch (err) {
+    console.error("Redis Cache GET Error:", err);
+  }
+
   // Build where condition
   const whereCondition: any = {
     isActive: true, // শুধু active travel plans দেখাবে
@@ -187,7 +202,7 @@ const getAllTravelPlans = async (query: Record<string, any>) => {
   // Calculate meta
   const totalPage = Math.ceil(total / take);
 
-  return {
+  const result = {
     meta: {
       page: Number(page),
       limit: take,
@@ -196,6 +211,17 @@ const getAllTravelPlans = async (query: Record<string, any>) => {
     },
     data,
   };
+
+  try {
+    if (redisClient.isOpen) {
+      // SET cache for 5 minutes (300 seconds)
+      await redisClient.setEx(cacheKey, 300, JSON.stringify(result));
+    }
+  } catch (err) {
+    console.error("Redis Cache SET Error:", err);
+  }
+
+  return result;
 };
 
 /* ================= GET BY ID ================= */
@@ -263,39 +289,48 @@ const deleteTravelPlan = async (id: string, userId: string) => {
   return { message: "Travel plan deleted successfully" };
 };
 
-/* ================= MATCH TRAVELERS ================= */
-
-const matchTravelers = async (query: MatchQuery & { userId: string }) => {
+const matchTravelers = async (query: MatchQuery & { userId: string, travelType?: string }) => {
   const {
     destination,
     startDate,
     endDate,
     minBudget,
     maxBudget,
+    travelType,
     flexDays = 3,
     userId,
-  } = query;
-
-  const flexStartDate = new Date(startDate);
-  flexStartDate.setDate(flexStartDate.getDate() - flexDays);
-
-  const flexEndDate = new Date(endDate);
-  flexEndDate.setDate(flexEndDate.getDate() + flexDays);
+  } = query as any;
 
   const where: any = {
-    destination: {
-      contains: destination,
-      mode: "insensitive",
-    },
     userId: {
       not: userId, // 🔥 own plan exclude
     },
     isActive: true,
-    AND: [
+  };
+
+  if (destination) {
+    where.destination = {
+      contains: destination,
+      mode: "insensitive",
+    };
+  }
+
+  if (travelType) {
+    where.travelType = travelType;
+  }
+
+  if (startDate && endDate) {
+    const flexStartDate = new Date(startDate);
+    flexStartDate.setDate(flexStartDate.getDate() - flexDays);
+
+    const flexEndDate = new Date(endDate);
+    flexEndDate.setDate(flexEndDate.getDate() + flexDays);
+
+    where.AND = [
       { startDate: { lte: flexEndDate } },
       { endDate: { gte: flexStartDate } },
-    ],
-  };
+    ];
+  }
 
   // ✅ Correct budget logic
   if (minBudget !== undefined) {

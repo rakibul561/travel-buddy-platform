@@ -21,7 +21,6 @@ const sendJoinRequest = catchAsync(async (req: Request, res: Response) => {
 const getRequestsForMyTrips = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req.user as any).userId;
-
     const result = await JoinRequestService.getRequestsForMyTrips(userId);
 
     sendResponse(res, {
@@ -38,7 +37,6 @@ const updateJoinRequestStatus = catchAsync(
     const userId = (req.user as any).userId;
     const { id } = req.params;
     const { status } = req.body;
-
     const result = await JoinRequestService.updateJoinRequestStatus(
       userId,
       id,
@@ -54,8 +52,22 @@ const updateJoinRequestStatus = catchAsync(
   },
 );
 
+const getMySentRequests = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).userId;
+
+  const result = await JoinRequestService.getMySentRequests(userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Sent join requests retrieved",
+    data: result,
+  });
+});
+
 export const JoinRequestController = {
   sendJoinRequest,
   getRequestsForMyTrips,
   updateJoinRequestStatus,
+  getMySentRequests,
 };
